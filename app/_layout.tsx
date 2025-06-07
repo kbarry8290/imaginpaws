@@ -14,12 +14,12 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { PurchasesProvider } from '@/contexts/PurchasesContext';
 import { CreditsProvider } from '@/contexts/CreditsContext';
 import { AnonymousTransformationsProvider } from '@/contexts/AnonymousTransformationsContext';
-import * as Sentry from '@sentry/react-native';
+import * as Sentry from 'sentry-expo';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { attachLogsToSentry } from '@/utils/logBuffer';
 import { logAppStartup, logScreenView } from '@/utils/logging';
 
-// Initialize Sentry
+// Initialize Sentry as early as possible
 Sentry.init({
   dsn: 'https://ced6c9b06594c63ae4b474c9cc07a25f@o4509351040909312.ingest.us.sentry.io/4509351044382720',
   enableInExpoDevelopment: true,
@@ -37,12 +37,12 @@ Sentry.init({
 if (!__DEV__) {
   globalThis.addEventListener('error', (event) => {
     attachLogsToSentry(event.error);
-    Sentry.captureException(event.error);
+    Sentry.Native.captureException(event.error);
   });
 
   globalThis.addEventListener('unhandledrejection', (event) => {
     attachLogsToSentry(event.reason);
-    Sentry.captureException(event.reason);
+    Sentry.Native.captureException(event.reason);
   });
 }
 
@@ -65,7 +65,7 @@ function useProtectedRoute(user: any) {
   }, [user, segments]);
 
   useEffect(() => {
-    if (segments.length > 0 && Sentry) {
+    if (segments.length > 0) {
       logScreenView(segments.join('/'));
     }
   }, [segments]);
@@ -96,9 +96,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (Sentry) {
-      logAppStartup();
-    }
+    logAppStartup();
   }, []);
 
   useEffect(() => {

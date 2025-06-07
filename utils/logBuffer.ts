@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react-native';
+import * as Sentry from 'sentry-expo';
 import { Platform } from 'react-native';
 
 // Ring buffer to store recent logs
@@ -75,13 +75,29 @@ export function getRecentLogs(): string {
 export function attachLogsToSentry(error: Error | string): void {
   const logs = getRecentLogs();
   
-  Sentry.addBreadcrumb({
-    category: 'console',
-    message: 'Recent console logs before crash',
-    level: 'info',
-    data: {
-      recentLogs: logs,
-      error: error instanceof Error ? error.message : error,
-    },
-  });
+  try {
+    if (Platform.OS === 'web') {
+      Sentry.Browser?.addBreadcrumb({
+        category: 'console',
+        message: 'Recent console logs before crash',
+        level: 'info',
+        data: {
+          recentLogs: logs,
+          error: error instanceof Error ? error.message : error,
+        },
+      });
+    } else {
+      Sentry.Native?.addBreadcrumb({
+        category: 'console',
+        message: 'Recent console logs before crash',
+        level: 'info',
+        data: {
+          recentLogs: logs,
+          error: error instanceof Error ? error.message : error,
+        },
+      });
+    }
+  } catch (sentryError) {
+    console.warn('Failed to attach logs to Sentry:', sentryError);
+  }
 }

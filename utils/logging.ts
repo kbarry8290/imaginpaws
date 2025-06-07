@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react-native';
+import * as Sentry from 'sentry-expo';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { version as appVersion } from '../package.json';
@@ -12,7 +12,7 @@ const deviceInfo = {
   isDevice: Constants.isDevice,
   ...Platform.select({
     web: {
-      userAgent: window.navigator.userAgent,
+      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'unknown',
     },
     default: {},
   }),
@@ -25,23 +25,52 @@ const logBreadcrumb = (breadcrumb: {
   level: Sentry.SeverityLevel;
   data?: Record<string, any>;
 }) => {
-  Sentry.addBreadcrumb({
-    ...breadcrumb,
-    data: {
-      ...breadcrumb.data,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  try {
+    if (Platform.OS === 'web') {
+      // Use Browser SDK for web
+      Sentry.Browser?.addBreadcrumb({
+        ...breadcrumb,
+        timestamp: Date.now() / 1000, // Sentry expects seconds
+      });
+    } else {
+      // Use Native SDK for mobile
+      Sentry.Native?.addBreadcrumb({
+        ...breadcrumb,
+        data: {
+          ...breadcrumb.data,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to log breadcrumb:', error);
+  }
 };
 
 // Helper function to safely set user
 const setUser = (user: { id: string } | null) => {
-  Sentry.setUser(user);
+  try {
+    if (Platform.OS === 'web') {
+      Sentry.Browser?.setUser(user);
+    } else {
+      Sentry.Native?.setUser(user);
+    }
+  } catch (error) {
+    console.warn('Failed to set user:', error);
+  }
 };
 
 // Helper function to safely capture exception
 const captureException = (error: Error, extras?: { extra: Record<string, any> }) => {
-  Sentry.captureException(error, extras);
+  try {
+    if (Platform.OS === 'web') {
+      Sentry.Browser?.captureException(error, extras);
+    } else {
+      Sentry.Native?.captureException(error, extras);
+    }
+  } catch (sentryError) {
+    console.warn('Failed to capture exception:', sentryError);
+  }
 };
 
 // App lifecycle events

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import * as Sentry from 'sentry-expo';
+import * as Sentry from '@sentry/react-native';
 import Button from './ui/Button';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
@@ -30,19 +30,12 @@ class ErrorBoundary extends React.Component<Props, State> {
     // Attach console logs before sending to Sentry
     attachLogsToSentry(error);
     
-    if (Platform.OS === 'web') {
-      Sentry.Browser?.captureException(error, {
-        extra: {
-          componentStack: errorInfo.componentStack,
-        },
-      });
-    } else {
-      Sentry.Native?.captureException(error, {
-        extra: {
-          componentStack: errorInfo.componentStack,
-        },
-      });
-    }
+    // Capture exception with Sentry
+    Sentry.captureException(error, {
+      extra: {
+        componentStack: errorInfo.componentStack,
+      },
+    });
   }
 
   handleReload = () => {

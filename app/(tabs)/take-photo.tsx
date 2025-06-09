@@ -13,7 +13,7 @@ import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
 import { Camera as CameraIcon, Camera as FlipCamera, ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { Camera } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import Button from '@/components/ui/Button';
 
 export default function TakePhotoScreen() {
@@ -21,27 +21,27 @@ export default function TakePhotoScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
-  const [type, setType] = useState(Camera.Constants.Type.back);
-  const [permission, requestPermission] = Camera.useCameraPermissions();
-  const cameraRef = useRef<Camera>(null);
+  const [type, setType] = useState<'back' | 'front' | null>(
+    Platform.OS === 'web' ? null : 'back'
+  );
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
 
   const takePicture = async () => {
     if (!cameraRef.current) return;
 
     try {
       const photo = await cameraRef.current.takePictureAsync();
-      setPhoto(photo.uri);
+      if (photo && photo.uri) {
+        setPhoto(photo.uri);
+      }
     } catch (error) {
       console.error("Error taking picture:", error);
     }
   };
 
   const toggleCameraType = () => {
-    setType(current => (
-      current === Camera.Constants.Type.back
-        ? Camera.Constants.Type.front
-        : Camera.Constants.Type.back
-    ));
+    setType(current => (current === 'back' ? 'front' : 'back'));
   };
 
   const handleUsePhoto = () => {
@@ -144,16 +144,19 @@ export default function TakePhotoScreen() {
           </View>
         ) : (
           <>
-            <Camera
-              ref={cameraRef}
-              style={styles.camera}
-              type={type}
-            />
+            {type !== null && (
+              <CameraView
+                ref={cameraRef}
+                style={styles.camera}
+                facing={type}
+              />
+            )}
             
             <View style={styles.cameraControls}>
               <TouchableOpacity
                 style={[styles.flipButton, { backgroundColor: colors.secondary }]}
                 onPress={toggleCameraType}
+                disabled={type === null}
               >
                 <FlipCamera color="white" size={20} />
               </TouchableOpacity>
@@ -161,6 +164,7 @@ export default function TakePhotoScreen() {
               <TouchableOpacity
                 style={[styles.captureButton, { backgroundColor: colors.primary }]}
                 onPress={takePicture}
+                disabled={type === null}
               >
                 <CameraIcon color="white" size={28} />
               </TouchableOpacity>

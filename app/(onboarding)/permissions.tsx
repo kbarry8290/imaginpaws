@@ -4,13 +4,15 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
 import Button from '@/components/ui/Button';
 import { useRouter } from 'expo-router';
-import { Camera, Image } from 'lucide-react-native';
+import { Camera, Image, ArrowLeft } from 'lucide-react-native';
 import Card from '@/components/ui/Card';
 
 export default function PermissionsScreen() {
@@ -25,7 +27,10 @@ export default function PermissionsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ArrowLeft color={colors.text} size={24} />
+        </TouchableOpacity>
         <Card style={styles.card}>
           <Text style={[styles.title, { color: colors.text }]}>
             We Need a Little Help!
@@ -52,7 +57,7 @@ export default function PermissionsScreen() {
             />
           </View>
         </Card>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -64,7 +69,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: Layout.spacing.xl,
-    justifyContent: 'center',
+  },
+  backButton: {
+    marginBottom: Layout.spacing.l,
+    padding: Layout.spacing.s,
   },
   card: {
     alignItems: 'center',

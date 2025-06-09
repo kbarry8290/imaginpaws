@@ -5,6 +5,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
@@ -63,8 +64,8 @@ const steps: Step[] = [
   },
   {
     id: 'personality',
-    title: 'What\'s Their Personality?',
-    subtitle: 'Choose the human vibe that matches your pet best.',
+    title: 'Personality?',
+    subtitle: 'Choose the vibe that matches your pet.',
     options: [
       { value: 'playful', label: 'Playful', emoji: '😄' },
       { value: 'grumpy', label: 'Grumpy', emoji: '😠' },
@@ -73,7 +74,6 @@ const steps: Step[] = [
       { value: 'cool', label: 'Cool', emoji: '😎' },
       { value: 'regal', label: 'Regal', emoji: '👑' },
       { value: 'lazy', label: 'Lazy', emoji: '😴' },
-      { value: 'hyper', label: 'Hyper', emoji: '⚡' },
     ],
   },
   {
@@ -156,7 +156,7 @@ export default function SettingsScreen() {
   if (isLastStep && isComplete) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <TouchableOpacity
             style={styles.backButton}
             onPress={handleBack}
@@ -192,14 +192,14 @@ export default function SettingsScreen() {
             icon={<Wand2 size={24} color="white" />}
             style={styles.transformButton}
           />
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TouchableOpacity
           style={styles.backButton}
           onPress={handleBack}
@@ -241,7 +241,7 @@ export default function SettingsScreen() {
           disabled={!settings[step.id]}
           style={styles.nextButton}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

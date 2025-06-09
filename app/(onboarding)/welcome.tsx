@@ -59,12 +59,6 @@ export default function WelcomeScreen() {
           <Text style={[styles.subtitle, { color: colors.placeholderText }]}>
             Transform your pet in one tap!
           </Text>
-          
-          {transformationsLeft > 0 && (
-            <Text style={[styles.freeTransforms, { color: colors.primary }]}>
-              {transformationsLeft} free {transformationsLeft === 1 ? 'transformation' : 'transformations'} remaining
-            </Text>
-          )}
         </View>
 
         <Button
@@ -137,11 +131,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Regular',
     textAlign: 'center',
     marginBottom: Layout.spacing.s,
-  },
-  freeTransforms: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Bold',
-    textAlign: 'center',
   },
   button: {
     minWidth: 200,

@@ -22,7 +22,6 @@ export default function ProScreen() {
   const { packages, loading, purchasePackage, restorePurchases } = usePurchases();
   const { credits, dailyScansUsed } = useCredits();
   const [error, setError] = useState<string | null>(null);
-  const [restoring, setRestoring] = useState(false);
 
   // Log initial state
   useEffect(() => {
@@ -50,26 +49,12 @@ export default function ProScreen() {
     }
   };
 
-  const handleRestore = async () => {
-    try {
-      console.log('ProScreen: Starting purchase restoration');
-      setRestoring(true);
-      setError(null);
-      await restorePurchases();
-    } catch (err: any) {
-      console.error('ProScreen: Restore error:', err);
-      setError(err.message || 'Failed to restore purchases');
-    } finally {
-      setRestoring(false);
-    }
-  };
-
   if (Platform.OS === 'web') {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.webMessage}>
           <Text style={[styles.webMessageText, { color: colors.text }]}>
-            Scan packs are only available on iOS and Android devices.
+            Credits are only available on iOS and Android devices.
           </Text>
         </View>
       </SafeAreaView>
@@ -85,10 +70,10 @@ export default function ProScreen() {
         <View style={styles.header}>
           <Crown size={40} color={colors.primary} />
           <Text style={[styles.title, { color: colors.text }]}>
-            Get More Scans
+            Get More Credits
           </Text>
           <Text style={[styles.subtitle, { color: colors.placeholderText }]}>
-            Transform more pets with scan packs
+            Transform more pets with credits
           </Text>
         </View>
 
@@ -108,7 +93,7 @@ export default function ProScreen() {
                 {2 - dailyScansUsed}
               </Text>
               <Text style={[styles.statLabel, { color: colors.placeholderText }]}>
-                Free Scans Today
+                Free Credits Left
               </Text>
             </View>
           </View>
@@ -162,14 +147,6 @@ export default function ProScreen() {
             ))}
           </View>
         )}
-
-        <Button
-          title={restoring ? 'Restoring...' : 'Restore Purchases'}
-          onPress={handleRestore}
-          variant="outline"
-          disabled={restoring}
-          style={styles.restoreButton}
-        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -252,9 +229,6 @@ const styles = StyleSheet.create({
   },
   purchaseButton: {
     minWidth: 200,
-  },
-  restoreButton: {
-    marginTop: Layout.spacing.xl,
   },
   errorContainer: {
     padding: Layout.spacing.m,

@@ -21,7 +21,7 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontFamily: 'Nunito-Bold',
           fontSize: 12,
-          marginBottom: 8,
+          marginBottom: 0,
         },
         tabBarIconStyle: {
           marginTop: 4,

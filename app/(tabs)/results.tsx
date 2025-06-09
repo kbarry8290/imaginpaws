@@ -62,7 +62,7 @@ export default function ResultsScreen() {
       >
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>
-            Transformation Complete! 🎉
+            Transformation Complete!
           </Text>
           <Text style={[styles.subtitle, { color: colors.placeholderText }]}>
             Your pet has been transformed into a human
@@ -75,6 +75,122 @@ export default function ResultsScreen() {
           settings={settings}
           isLoading={false}
         />
+
+        {settings && (
+          <View style={{ marginTop: Layout.spacing.l, marginBottom: Layout.spacing.l }}>
+            <View style={{
+              backgroundColor: colors.cardBackground,
+              borderRadius: Layout.borderRadius.medium,
+              padding: Layout.spacing.l,
+              shadowColor: '#000',
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+            }}>
+              <Text style={{
+                fontSize: 18,
+                fontFamily: 'Nunito-Bold',
+                marginBottom: Layout.spacing.s,
+                color: colors.text,
+              }}>
+                Transformation Settings
+              </Text>
+              {(() => {
+                // Option maps from TransformOptions.tsx
+                const optionMaps = {
+                  sex: [
+                    { label: 'Male', value: 'male', emoji: '👨' },
+                    { label: 'Female', value: 'female', emoji: '👩' },
+                  ],
+                  style: [
+                    { label: 'Realistic', value: 'realistic', emoji: '📷' },
+                    { label: 'Anime', value: 'anime', emoji: '🎌' },
+                    { label: 'Cartoon', value: 'cartoon', emoji: '🎨' },
+                    { label: 'Pixel Art', value: 'pixel', emoji: '👾' },
+                    { label: 'Renaissance', value: 'renaissance', emoji: '🖼️' },
+                    { label: 'Cyberpunk', value: 'cyberpunk', emoji: '🤖' },
+                    { label: 'Fantasy', value: 'fantasy', emoji: '🧙' },
+                  ],
+                  personality: [
+                    { label: 'Playful', value: 'playful', emoji: '😄' },
+                    { label: 'Grumpy', value: 'grumpy', emoji: '😠' },
+                    { label: 'Mysterious', value: 'mysterious', emoji: '🕵️' },
+                    { label: 'Goofy', value: 'goofy', emoji: '🤪' },
+                    { label: 'Cool', value: 'cool', emoji: '😎' },
+                    { label: 'Regal', value: 'regal', emoji: '👑' },
+                    { label: 'Lazy', value: 'lazy', emoji: '😴' },
+                  ],
+                  clothing: [
+                    { label: 'Casual', value: 'casual', emoji: '👕' },
+                    { label: 'Formal', value: 'formal', emoji: '👔' },
+                    { label: 'Futuristic', value: 'futuristic', emoji: '🚀' },
+                    { label: 'Medieval', value: 'medieval', emoji: '🏰' },
+                    { label: 'Hipster', value: 'hipster', emoji: '🧣' },
+                    { label: 'Punk', value: 'punk', emoji: '🤘' },
+                    { label: 'Superhero', value: 'superhero', emoji: '🦸' },
+                  ],
+                  background: [
+                    { label: 'Plain', value: 'plain', emoji: '🎨' },
+                    { label: 'Bedroom', value: 'bedroom', emoji: '🛏️' },
+                    { label: 'Park', value: 'park', emoji: '🌳' },
+                    { label: 'Space', value: 'space', emoji: '🌌' },
+                    { label: 'City', value: 'city', emoji: '🏙️' },
+                    { label: 'Abstract', value: 'abstract', emoji: '🎭' },
+                  ],
+                  age: [
+                    { label: 'Baby', value: 'baby', emoji: '👶' },
+                    { label: 'Teen', value: 'teen', emoji: '🧑' },
+                    { label: 'Adult', value: 'adult', emoji: '👨' },
+                    { label: 'Elder', value: 'elder', emoji: '👴' },
+                  ],
+                };
+                // Define the display order and friendly labels
+                const displayOrder: Array<keyof typeof optionMaps> = [
+                  'sex', 'style', 'age', 'clothing', 'personality', 'background'
+                ];
+                const friendlyLabels: Record<string, string> = {
+                  sex: 'Sex',
+                  style: 'Style',
+                  age: 'Age',
+                  clothing: 'Clothing',
+                  personality: 'Personality',
+                  background: 'Background',
+                };
+                return displayOrder.map((key) => {
+                  const value = settings[key];
+                  const options = optionMaps[key] as any[];
+                  const found = options.find((opt: any) => opt.value === value);
+                  return (
+                    <View key={key} style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: Layout.spacing.s / 2,
+                    }}>
+                      <Text style={{
+                        fontSize: 16,
+                        fontFamily: 'Nunito-Bold',
+                        color: colors.text,
+                      }}>
+                        {friendlyLabels[key]}:
+                      </Text>
+                      <Text style={{ fontSize: 16, marginLeft: 8 }}>
+                        {found?.emoji || ''}
+                      </Text>
+                      <Text style={{
+                        fontSize: 16,
+                        fontFamily: 'Nunito-Regular',
+                        color: colors.text,
+                        marginLeft: 8,
+                      }}>
+                        {found ? found.label : value}
+                      </Text>
+                    </View>
+                  );
+                });
+              })()}
+            </View>
+          </View>
+        )}
 
         <View style={styles.buttonsContainer}>
           <Button

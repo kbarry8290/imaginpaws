@@ -15,58 +15,39 @@ import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
-import { LogIn, Mail, Lock, Wand as Wand2 } from 'lucide-react-native';
+import { LogIn, Mail, Lock, ArrowLeft } from 'lucide-react-native';
 import Card from '@/components/ui/Card';
-
-type AuthMode = 'magic-link' | 'password';
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { signIn, signInWithMagicLink } = useAuth();
+  const { signIn } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authMode, setAuthMode] = useState<AuthMode>('magic-link');
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   const handleLogin = async () => {
     if (!email) {
       setError('Please enter your email address');
       return;
     }
-
-    if (authMode === 'password' && !password) {
+    if (!password) {
       setError('Please enter your password');
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
-
-      if (authMode === 'password') {
-        await signIn(email, password);
-        router.replace('/');
-      } else {
-        await signInWithMagicLink(email);
-        setMagicLinkSent(true);
-      }
+      await signIn(email, password);
+      router.replace('/');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleAuthMode = () => {
-    setAuthMode(current => current === 'magic-link' ? 'password' : 'magic-link');
-    setError(null);
-    setPassword('');
-    setMagicLinkSent(false);
   };
 
   return (
@@ -76,110 +57,68 @@ export default function LoginScreen() {
         style={styles.keyboardView}
       >
         <View style={styles.content}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft size={24} color={colors.text} />
+          </TouchableOpacity>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Welcome Back! 👋
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.placeholderText }]}>
-              {authMode === 'magic-link' 
-                ? "Enter your email to receive a magic link"
-                : "Sign in with your email and password"
-              }
-            </Text>
+            <Text style={[styles.title, { color: colors.text }]}>Welcome Back! 👋</Text>
+            <Text style={[styles.subtitle, { color: colors.placeholderText }]}>Sign in with your email and password</Text>
           </View>
-
           {error && (
-            <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
+            <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}> 
               <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
             </View>
           )}
-
-          {magicLinkSent ? (
-            <Card>
-              <View style={styles.successContainer}>
-                <Text style={[styles.successTitle, { color: colors.text }]}>
-                  Check your email! ✉️
-                </Text>
-                <Text style={[styles.successText, { color: colors.placeholderText }]}>
-                  We've sent a magic link to {email}. Click the link to sign in!
-                </Text>
-                <Button
-                  title="Send New Link"
-                  onPress={handleLogin}
-                  variant="outline"
-                  style={styles.resendButton}
-                />
-              </View>
-            </Card>
-          ) : (
-            <View style={styles.form}>
-              <Card style={styles.formCard}>
-                <View style={styles.inputContainer}>
-                  <View style={[styles.inputWrapper, { borderColor: colors.border }]}>
-                    <Mail size={20} color={colors.placeholderText} />
-                    <TextInput
-                      style={[styles.input, { color: colors.text }]}
-                      placeholder="Email"
-                      placeholderTextColor={colors.placeholderText}
-                      value={email}
-                      onChangeText={setEmail}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                    />
-                  </View>
+          <View style={styles.form}>
+            <Card style={styles.formCard}>
+              <View style={styles.inputContainer}>
+                <View style={[styles.inputWrapper, { borderColor: colors.border }]}> 
+                  <Mail size={20} color={colors.placeholderText} />
+                  <TextInput
+                    style={[styles.input, { color: colors.text }]}
+                    placeholder="Email"
+                    placeholderTextColor={colors.placeholderText}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
                 </View>
-
-                {authMode === 'password' && (
-                  <View style={styles.inputContainer}>
-                    <View style={[styles.inputWrapper, { borderColor: colors.border }]}>
-                      <Lock size={20} color={colors.placeholderText} />
-                      <TextInput
-                        style={[styles.input, { color: colors.text }]}
-                        placeholder="Password"
-                        placeholderTextColor={colors.placeholderText}
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                      />
-                    </View>
-                  </View>
-                )}
-
-                <Button
-                  title={authMode === 'magic-link' ? "Send Magic Link" : "Sign In"}
-                  onPress={handleLogin}
-                  isLoading={loading}
-                  icon={authMode === 'magic-link' ? 
-                    <Wand2 size={24} color="white" /> : 
-                    <LogIn size={24} color="white" />
-                  }
-                  style={styles.button}
-                />
-
-                <TouchableOpacity 
-                  style={styles.toggleContainer}
-                  onPress={toggleAuthMode}
-                >
-                  <Text style={[styles.toggleText, { color: colors.placeholderText }]}>
-                    {authMode === 'magic-link' ? 
-                      "Use password instead" : 
-                      "Use magic link instead"
-                    }
-                  </Text>
-                </TouchableOpacity>
-              </Card>
-
-              <TouchableOpacity 
-                style={styles.linkContainer}
-                onPress={() => router.push('/signup')}
-              >
-                <Text style={[styles.linkText, { color: colors.placeholderText }]}>
-                  Don't have an account?{' '}
-                  <Text style={{ color: colors.primary }}>Sign Up</Text>
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+              </View>
+              <View style={styles.inputContainer}>
+                <View style={[styles.inputWrapper, { borderColor: colors.border }]}> 
+                  <Lock size={20} color={colors.placeholderText} />
+                  <TextInput
+                    style={[styles.input, { color: colors.text }]}
+                    placeholder="Password"
+                    placeholderTextColor={colors.placeholderText}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                  />
+                </View>
+              </View>
+              <Button
+                title="Sign In"
+                onPress={handleLogin}
+                isLoading={loading}
+                icon={<LogIn size={24} color="white" />}
+                style={styles.button}
+              />
+            </Card>
+            <TouchableOpacity 
+              style={styles.linkContainer}
+              onPress={() => router.push('/signup')}
+            >
+              <Text style={[styles.linkText, { color: colors.placeholderText }]}> 
+                Don't have an account?{' '}
+                <Text style={{ color: colors.primary }}>Sign Up</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -196,7 +135,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: Layout.spacing.l,
-    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
@@ -256,30 +194,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Nunito-Regular',
   },
-  toggleContainer: {
-    alignItems: 'center',
-  },
-  toggleText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    textDecorationLine: 'underline',
-  },
-  successContainer: {
-    alignItems: 'center',
-    padding: Layout.spacing.l,
-  },
-  successTitle: {
-    fontSize: 24,
-    fontFamily: 'Nunito-Bold',
-    marginBottom: Layout.spacing.s,
-  },
-  successText: {
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    textAlign: 'center',
+  backButton: {
     marginBottom: Layout.spacing.l,
-  },
-  resendButton: {
-    minWidth: 200,
+    padding: Layout.spacing.s,
   },
 });

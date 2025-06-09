@@ -22,7 +22,7 @@ export default function SignupScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle, signInWithApple } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

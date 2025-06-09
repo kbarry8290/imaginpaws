@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   ScrollView,
   Linking,
+  Alert,
 } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
@@ -26,7 +27,6 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { credits, dailyScansUsed } = useCredits();
   
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [highQualityEnabled, setHighQualityEnabled] = React.useState(true);
   const [autoSaveEnabled, setAutoSaveEnabled] = React.useState(false);
   const [darkModeEnabled, setDarkModeEnabled] = React.useState(
@@ -44,10 +44,6 @@ export default function SettingsScreen() {
 
   const handleGetMoreCredits = () => {
     router.push('/pro');
-  };
-
-  const toggleNotifications = () => {
-    setNotificationsEnabled(prev => !prev);
   };
 
   const toggleHighQuality = () => {
@@ -150,21 +146,6 @@ export default function SettingsScreen() {
             <Switch
               value={darkModeEnabled}
               onValueChange={toggleDarkMode}
-              trackColor={{ false: '#767577', true: colors.primary }}
-              thumbColor={'#f4f3f4'}
-            />
-          </View>
-          
-          <View style={styles.settingRow}>
-            <View style={styles.settingLabelContainer}>
-              <Bell size={20} color={colors.text} />
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Notifications
-              </Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={toggleNotifications}
               trackColor={{ false: '#767577', true: colors.primary }}
               thumbColor={'#f4f3f4'}
             />

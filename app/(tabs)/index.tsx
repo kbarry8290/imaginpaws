@@ -104,7 +104,7 @@ export default function TransformScreen() {
 
       let imageFile;
       if (Platform.OS === 'web') {
-        const response = await fetch(petPhoto);
+        const response = await fetch(petPhoto!);
         const blob = await response.blob();
         imageFile = new File([blob], 'pet.jpg', { type: 'image/jpeg' });
       } else {
@@ -115,7 +115,7 @@ export default function TransformScreen() {
         };
       }
       formData.append('image', imageFile as any);
-      formData.append('user_id', user.id);
+      formData.append('user_id', user!.id);
 
       Object.entries(transformSettings).forEach(([key, value]) => {
         formData.append(key, value);
@@ -190,7 +190,7 @@ export default function TransformScreen() {
           }
         });
       } catch (err) {
-        if (err.name === 'AbortError') {
+        if ((err as any).name === 'AbortError') {
           throw new Error('Transformation timed out. Please try again.');
         }
         throw err;
@@ -253,7 +253,7 @@ export default function TransformScreen() {
         ]}
       >
         <Button
-          title={canScan ? "Transform Pet 🪄" : "Get More Scans"}
+          title={canScan ? "Transform Pet 🪄" : "Get More Credits"}
           onPress={handleTransform}
           size="small"
           fullWidth

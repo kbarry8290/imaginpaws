@@ -9,45 +9,21 @@ import {
   Nunito_800ExtraBold
 } from '@expo-google-fonts/nunito';
 import { SplashScreen } from 'expo-router';
-import { Platform, View } from 'react-native';
+import { Platform, View, Text } from 'react-native';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { PurchasesProvider } from '@/contexts/PurchasesContext';
 import { CreditsProvider } from '@/contexts/CreditsContext';
 import { AnonymousTransformationsProvider } from '@/contexts/AnonymousTransformationsContext';
-import * as Sentry from 'sentry-expo';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { attachLogsToSentry } from '@/utils/logBuffer';
 import { logAppStartup, logScreenView } from '@/utils/logging';
-
-// Initialize Sentry as early as possible
-Sentry.init({
-  dsn: 'https://ced6c9b06594c63ae4b474c9cc07a25f@o4509351040909312.ingest.us.sentry.io/4509351044382720',
-  enableInExpoDevelopment: true,
-  debug: __DEV__,
-  tracesSampleRate: 1.0,
-  beforeSend(event) {
-    if (event.exception) {
-      attachLogsToSentry(event.exception.values?.[0]?.value);
-    }
-    return event;
-  },
-});
-
-// Set up global error handlers
-if (!__DEV__) {
-  globalThis.addEventListener('error', (event) => {
-    attachLogsToSentry(event.error);
-    Sentry.Native.captureException(event.error);
-  });
-
-  globalThis.addEventListener('unhandledrejection', (event) => {
-    attachLogsToSentry(event.reason);
-    Sentry.Native.captureException(event.reason);
-  });
-}
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
+
+// Add this at the very top
+console.log('App starting: _layout.tsx loaded');
 
 function useProtectedRoute(user: any) {
   const segments = useSegments();
@@ -86,41 +62,65 @@ function RootLayoutNav() {
   );
 }
 
-export default function RootLayout() {
-  useFrameworkReady();
-
-  const [fontsLoaded, fontError] = useFonts({
-    'Nunito-Regular': Nunito_400Regular,
-    'Nunito-Bold': Nunito_700Bold,
-    'Nunito-ExtraBold': Nunito_800ExtraBold,
+// Add global error handler
+if (typeof ErrorUtils !== 'undefined') {
+  ErrorUtils.setGlobalHandler((error, isFatal) => {
+    console.log('Global error handler:', error, 'isFatal:', isFatal);
+    throw error;
   });
+}
 
-  useEffect(() => {
-    logAppStartup();
-  }, []);
+export default function RootLayout() {
+  console.log('RootLayout function invoked');
+  try {
+    useFrameworkReady();
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+    const [fontsLoaded, fontError] = useFonts({
+      'Nunito-Regular': Nunito_400Regular,
+      'Nunito-Bold': Nunito_700Bold,
+      'Nunito-ExtraBold': Nunito_800ExtraBold,
+    });
+
+    useEffect(() => {
+      logAppStartup();
+    }, []);
+
+    useEffect(() => {
+      if (fontsLoaded || fontError) {
+        SplashScreen.hideAsync();
+      }
+    }, [fontsLoaded, fontError]);
+
+    if (!fontsLoaded && !fontError) {
+      console.log('Fonts not loaded yet');
+      return null;
     }
-  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) {
-    return null;
+    const insets = useSafeAreaInsets();
+
+    console.log('Rendering RootLayoutNav and providers');
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AuthProvider>
+          <AnonymousTransformationsProvider>
+            <CreditsProvider>
+              <PurchasesProvider>
+                <RootLayoutNav />
+                <StatusBar style={Platform.OS === 'ios' ? 'dark' : 'auto'} />
+              </PurchasesProvider>
+            </CreditsProvider>
+          </AnonymousTransformationsProvider>
+        </AuthProvider>
+      </GestureHandlerRootView>
+    );
+  } catch (err: any) {
+    console.log('Error rendering RootLayout:', err);
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}>
+        <Text style={{ color: 'red', fontSize: 18, textAlign: 'center' }}>
+          App crashed: {err && err.message ? err.message : String(err)}
+        </Text>
+      </View>
+    );
   }
-
-  return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <AnonymousTransformationsProvider>
-          <CreditsProvider>
-            <PurchasesProvider>
-              <RootLayoutNav />
-              <StatusBar style={Platform.OS === 'ios' ? 'dark' : 'auto'} />
-            </PurchasesProvider>
-          </CreditsProvider>
-        </AnonymousTransformationsProvider>
-      </AuthProvider>
-    </ErrorBoundary>
-  );
 }

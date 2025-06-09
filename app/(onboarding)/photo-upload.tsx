@@ -5,6 +5,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
@@ -35,7 +36,7 @@ export default function PhotoUploadScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -65,7 +66,7 @@ export default function PhotoUploadScreen() {
           icon={<ArrowRight size={24} color="white" />}
           style={styles.button}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -16,7 +16,6 @@ type AuthContextType = {
   loading: boolean;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithMagicLink: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -104,18 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data.session) {
       logAuthEvent('login', data.session.user.id, { method: 'password' });
     }
-  };
-
-  const signInWithMagicLink = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        redirectTo: 'https://imaginpaws.com/auth/callback'
-      }
-    });
-
-    if (error) throw error;
-    logAuthEvent('login', undefined, { method: 'magic_link', email });
   };
 
   const signInWithGoogle = async () => {
@@ -218,7 +205,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       signUp,
       signIn,
-      signInWithMagicLink,
       signInWithGoogle,
       signInWithApple,
       signOut,

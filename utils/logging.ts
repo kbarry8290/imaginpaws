@@ -1,4 +1,3 @@
-import * as Sentry from 'sentry-expo';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { version as appVersion } from '../package.json';
@@ -22,55 +21,20 @@ const deviceInfo = {
 const logBreadcrumb = (breadcrumb: {
   category: string;
   message: string;
-  level: Sentry.SeverityLevel;
+  level: 'info' | 'warning' | 'error' | 'fatal' | 'debug';
   data?: Record<string, any>;
 }) => {
-  try {
-    if (Platform.OS === 'web') {
-      // Use Browser SDK for web
-      Sentry.Browser?.addBreadcrumb({
-        ...breadcrumb,
-        timestamp: Date.now() / 1000, // Sentry expects seconds
-      });
-    } else {
-      // Use Native SDK for mobile
-      Sentry.Native?.addBreadcrumb({
-        ...breadcrumb,
-        data: {
-          ...breadcrumb.data,
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
-  } catch (error) {
-    console.warn('Failed to log breadcrumb:', error);
-  }
+  // Sentry breadcrumb reporting temporarily removed
 };
 
 // Helper function to safely set user
 const setUser = (user: { id: string } | null) => {
-  try {
-    if (Platform.OS === 'web') {
-      Sentry.Browser?.setUser(user);
-    } else {
-      Sentry.Native?.setUser(user);
-    }
-  } catch (error) {
-    console.warn('Failed to set user:', error);
-  }
+  // Sentry setUser temporarily removed
 };
 
 // Helper function to safely capture exception
 const captureException = (error: Error, extras?: { extra: Record<string, any> }) => {
-  try {
-    if (Platform.OS === 'web') {
-      Sentry.Browser?.captureException(error, extras);
-    } else {
-      Sentry.Native?.captureException(error, extras);
-    }
-  } catch (sentryError) {
-    console.warn('Failed to capture exception:', sentryError);
-  }
+  // Sentry captureException temporarily removed
 };
 
 // App lifecycle events

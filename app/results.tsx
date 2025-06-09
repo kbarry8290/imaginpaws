@@ -16,6 +16,7 @@ import { History, Wand as Wand2 } from 'lucide-react-native';
 import ResultCard from '@/components/ResultCard';
 import { TransformSettings } from '@/components/TransformOptions';
 import { useAuth } from '@/contexts/AuthContext';
+import Card from '@/components/ui/Card';
 
 export default function ResultsScreen() {
   const colorScheme = useColorScheme();
@@ -75,6 +76,20 @@ export default function ResultsScreen() {
           isLoading={false}
         />
 
+        <Card style={styles.settingsCard}>
+          <Text style={[styles.settingsTitle, { color: colors.text }]}>Transformation Settings</Text>
+          {Object.entries(settings).map(([key, value]) => (
+            <View key={key} style={styles.settingsRow}>
+              <Text style={[styles.settingsLabel, { color: colors.placeholderText }]}> 
+                {key.charAt(0).toUpperCase() + key.slice(1)}:
+              </Text>
+              <Text style={[styles.settingsValue, { color: colors.text }]}> 
+                {typeof value === 'string' && value.match(/^[\p{Emoji}]/u) ? value : ''} {value}
+              </Text>
+            </View>
+          ))}
+        </Card>
+
         <View style={styles.buttonsContainer}>
           <Button
             title="New Transformation"
@@ -130,5 +145,29 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Bold',
     textAlign: 'center',
     marginBottom: Layout.spacing.l,
+  },
+  settingsCard: {
+    marginTop: Layout.spacing.l,
+    marginBottom: Layout.spacing.l,
+    padding: Layout.spacing.l,
+  },
+  settingsTitle: {
+    fontSize: 18,
+    fontFamily: 'Nunito-Bold',
+    marginBottom: Layout.spacing.s,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Layout.spacing.s / 2,
+  },
+  settingsLabel: {
+    fontSize: 16,
+    fontFamily: 'Nunito-Bold',
+  },
+  settingsValue: {
+    fontSize: 16,
+    fontFamily: 'Nunito-Regular',
   },
 });

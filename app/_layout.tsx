@@ -18,6 +18,13 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { logAppStartup, logScreenView } from '@/utils/logging';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Sentry from 'sentry-expo';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  enableInExpoDevelopment: true,
+  debug: false,
+});
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();

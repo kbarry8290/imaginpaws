@@ -79,7 +79,7 @@ export default function GalleryScreen() {
   };
 
   const handleNewTransform = () => {
-    router.push('/');
+    router.push('/(tabs)/transform');
   };
 
   const handleTransformationPress = (transformation: Transformation) => {

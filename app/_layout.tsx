@@ -18,11 +18,12 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { logAppStartup, logScreenView } from '@/utils/logging';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Sentry from 'sentry-expo';
+import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  enableInExpoDevelopment: true,
+  enableNative: true,
+  enableNativeCrashHandling: true,
   debug: false,
 });
 
@@ -43,7 +44,7 @@ function useProtectedRoute(user: any) {
     if (!user && !inAuthGroup && !inOnboardingGroup) {
       router.replace('/welcome');
     } else if (user && (inAuthGroup || inOnboardingGroup)) {
-      router.replace('/');
+      router.replace('/(tabs)/transform');
     }
   }, [user, segments]);
 
@@ -79,31 +80,32 @@ if (typeof ErrorUtils !== 'undefined') {
 
 export default function RootLayout() {
   console.log('RootLayout function invoked');
+
+  useFrameworkReady();
+
+  const [fontsLoaded, fontError] = useFonts({
+    'Nunito-Regular': Nunito_400Regular,
+    'Nunito-Bold': Nunito_700Bold,
+    'Nunito-ExtraBold': Nunito_800ExtraBold,
+  });
+
+  useEffect(() => {
+    logAppStartup();
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  const insets = useSafeAreaInsets();
+
   try {
-    useFrameworkReady();
-
-    const [fontsLoaded, fontError] = useFonts({
-      'Nunito-Regular': Nunito_400Regular,
-      'Nunito-Bold': Nunito_700Bold,
-      'Nunito-ExtraBold': Nunito_800ExtraBold,
-    });
-
-    useEffect(() => {
-      logAppStartup();
-    }, []);
-
-    useEffect(() => {
-      if (fontsLoaded || fontError) {
-        SplashScreen.hideAsync();
-      }
-    }, [fontsLoaded, fontError]);
-
     if (!fontsLoaded && !fontError) {
       console.log('Fonts not loaded yet');
       return null;
     }
-
-    const insets = useSafeAreaInsets();
 
     console.log('Rendering RootLayoutNav and providers');
     return (

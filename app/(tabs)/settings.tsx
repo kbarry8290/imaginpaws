@@ -29,14 +29,11 @@ export default function SettingsScreen() {
   
   const [highQualityEnabled, setHighQualityEnabled] = React.useState(true);
   const [autoSaveEnabled, setAutoSaveEnabled] = React.useState(false);
-  const [darkModeEnabled, setDarkModeEnabled] = React.useState(
-    colorScheme === 'dark'
-  );
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      router.replace('/');
+      router.replace('/(auth)/login');
     } catch (error) {
       Alert.alert('Error', 'Failed to sign out. Please try again.');
     }
@@ -52,10 +49,6 @@ export default function SettingsScreen() {
 
   const toggleAutoSave = () => {
     setAutoSaveEnabled(prev => !prev);
-  };
-
-  const toggleDarkMode = () => {
-    setDarkModeEnabled(prev => !prev);
   };
 
   return (
@@ -123,31 +116,6 @@ export default function SettingsScreen() {
               onPress={handleGetMoreCredits}
               icon={<Crown size={20} color="white" />}
               style={styles.creditsButton}
-            />
-          </View>
-        </Card>
-        
-        <Card style={styles.settingsSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            App Preferences
-          </Text>
-          
-          <View style={styles.settingRow}>
-            <View style={styles.settingLabelContainer}>
-              {darkModeEnabled ? (
-                <Moon size={20} color={colors.text} />
-              ) : (
-                <Sun size={20} color={colors.text} />
-              )}
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Dark Mode
-              </Text>
-            </View>
-            <Switch
-              value={darkModeEnabled}
-              onValueChange={toggleDarkMode}
-              trackColor={{ false: '#767577', true: colors.primary }}
-              thumbColor={'#f4f3f4'}
             />
           </View>
         </Card>

@@ -7,7 +7,8 @@ import {
   useColorScheme,
   SafeAreaView,
   Platform,
-  Alert
+  Alert,
+  TouchableOpacity
 } from 'react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
@@ -15,19 +16,18 @@ import PhotoUploader from '@/components/PhotoUploader';
 import TransformOptions, { TransformSettings } from '@/components/TransformOptions';
 import Button from '@/components/ui/Button';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { Wand as Wand2 } from 'lucide-react-native';
+import { Wand2, ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCredits } from '@/contexts/CreditsContext';
 import { logTransformEvent, logError, logApiCall } from '@/utils/logging';
 import NetInfo from '@react-native-community/netinfo';
+import { generateImage } from '@/utils/api';
 
-const API_URL = 'https://imaginpaws.com/api/generate-human';
-const API_KEY = process.env.EXPO_PUBLIC_IMAGINPAWS_API_KEY;
 const TRANSFORM_TIMEOUT = 120000; // 120 seconds
 
-export default function TransformScreen() {
+export default function PetToPersonScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
@@ -64,22 +64,9 @@ export default function TransformScreen() {
     if (!petPhoto) {
       throw new Error('Please upload a pet photo first!');
     }
-    if (!API_URL || !API_KEY) {
-      throw new Error('API configuration is missing. Please contact support.');
-    }
     if (!user) {
       throw new Error('Please sign in to transform your pet.');
     }
-  };
-
-  const getErrorMessage = (response: Response, errorText: string) => {
-    // Handle 500 errors with user-friendly message
-    if (response.status === 500) {
-      return "I'm sorry, something went wrong. Please try again.";
-    }
-    
-    // For other API errors, show the generic API error message
-    return `API error: ${response.status}`;
   };
 
   const handleTransform = async () => {
@@ -100,54 +87,25 @@ export default function TransformScreen() {
       setIsTransforming(true);
       logTransformEvent('started', { settings: transformSettings });
 
-      const formData = new FormData();
-
-      let imageFile;
-      if (Platform.OS === 'web') {
-        const response = await fetch(petPhoto!);
-        const blob = await response.blob();
-        imageFile = new File([blob], 'pet.jpg', { type: 'image/jpeg' });
-      } else {
-        imageFile = {
-          uri: petPhoto,
-          type: 'image/jpeg',
-          name: 'pet.jpg',
-        };
-      }
-      formData.append('image', imageFile as any);
-      formData.append('user_id', user!.id);
-
-      Object.entries(transformSettings).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
-
       // Create AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), TRANSFORM_TIMEOUT);
 
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-          },
-          body: formData,
-          signal: controller.signal,
+        if (!user || !petPhoto) {
+          throw new Error('Missing required data');
+        }
+
+        const result = await generateImage({
+          transformation_type: 'pet-to-person',
+          user_id: user.id,
+          image: petPhoto,
+          gender: transformSettings.sex,
+          style: transformSettings.style,
+          clothing: transformSettings.clothing,
         });
 
         clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          logApiCall('POST', API_URL, response.status, errorText);
-          
-          // Use the new error message function
-          const userFriendlyError = getErrorMessage(response, errorText);
-          throw new Error(userFriendlyError);
-        }
-
-        const data = await response.json();
-        logApiCall('POST', API_URL, response.status, null, { success: true });
 
         // Only consume credit after successful transformation
         const success = await consumeCredit();
@@ -155,20 +113,42 @@ export default function TransformScreen() {
           throw new Error('Failed to consume credit');
         }
         
+        // Extract result photo URL from the response object
+        const resultPhoto = result?.result_photo;
+        console.log('Result photo URL to save:', resultPhoto);
+        if (!resultPhoto) {
+          setError('No result photo returned from the server. Transformation will not be saved.');
+          return;
+        }
         if (user) {
           try {
-            const { error: saveError } = await supabase
+            // Prepare payload with only defined, required fields
+            const payload: Record<string, any> = {
+              user_id: user.id,
+              original_photo: petPhoto,
+              result_photo: resultPhoto,
+              transformation_type: 'pet-to-person',
+              style: transformSettings.style,
+              sex: transformSettings.sex,
+              age: transformSettings.age,
+              outfit: transformSettings.clothing,
+              personality: transformSettings.personality,
+              background: transformSettings.background,
+            };
+            // Remove any undefined/null fields (for non-nullable columns)
+            Object.keys(payload).forEach(key => {
+              if (payload[key] === undefined || payload[key] === null) {
+                delete payload[key];
+              }
+            });
+            const { data, error } = await supabase
               .from('transformations')
-              .insert({
-                user_id: user.id,
-                original_photo: data.original_photo,
-                result_photo: data.result_photo,
-                ...transformSettings,
-              });
+              .insert(payload);
+            console.log('Insert result:', { data, error });
 
-            if (saveError) {
-              console.error('Error saving transformation:', saveError);
-              logError(saveError, { context: 'saving_transformation' });
+            if (error) {
+              console.error('Error saving transformation:', error);
+              logError(error, { context: 'saving_transformation' });
             }
           } catch (err) {
             console.error('Error saving transformation:', err);
@@ -184,8 +164,8 @@ export default function TransformScreen() {
         router.push({
           pathname: '/results',
           params: {
-            originalPhoto: data.original_photo,
-            resultPhoto: data.result_photo,
+            originalPhoto: petPhoto,
+            resultPhoto: resultPhoto,
             settings: JSON.stringify(transformSettings)
           }
         });
@@ -214,16 +194,17 @@ export default function TransformScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)/transform')} style={styles.backButton}>
+          <ArrowLeft size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text }]}>Pet to Person</Text>
+      </View>
       <View style={styles.contentContainer}>
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              ImaginPaws
-            </Text>
-          </View>
           
           {error && (
             <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
@@ -248,19 +229,16 @@ export default function TransformScreen() {
           styles.buttonContainer, 
           { 
             backgroundColor: colors.background,
-            borderTopColor: colors.border 
+            borderTopColor: colors.border,
           }
         ]}
       >
         <Button
-          title={canScan ? "Transform Pet 🪄" : "Get More Credits"}
+          title="Transform"
           onPress={handleTransform}
-          size="small"
-          fullWidth
-          icon={<Wand2 size={20} color="white" />}
-          isLoading={isTransforming}
           disabled={!petPhoto || isTransforming}
-          style={styles.transformButton}
+          isLoading={isTransforming}
+          icon={<Wand2 size={24} color="white" />}
         />
       </View>
 
@@ -281,33 +259,31 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? Layout.spacing.xl : Layout.spacing.l,
   },
   header: {
-    marginBottom: Layout.spacing.m,
+    marginBottom: Layout.spacing.l,
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Nunito-ExtraBold',
-    textAlign: 'center',
+    fontFamily: 'Nunito-Bold',
   },
   errorContainer: {
     padding: Layout.spacing.m,
-    borderRadius: Layout.borderRadius.small,
+    borderRadius: Layout.borderRadius.medium,
     marginBottom: Layout.spacing.m,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Nunito-Regular',
-    textAlign: 'center',
   },
   buttonContainer: {
-    padding: Layout.spacing.s,
+    padding: Layout.spacing.l,
     borderTopWidth: 1,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  transformButton: {
-    height: 44,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Layout.spacing.l,
   },
-});
+  backButton: {
+    marginRight: Layout.spacing.m,
+  },
+}); 

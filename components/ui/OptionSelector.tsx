@@ -90,7 +90,7 @@ export default function OptionSelector({
   return (
     <View style={[
       styles.container, 
-      { zIndex },
+      { zIndex: isExpanded ? 100 : zIndex },
       Platform.OS === 'web' && { position: 'relative' },
       style
     ]}>
@@ -107,7 +107,8 @@ export default function OptionSelector({
           styles.selector, 
           { 
             borderColor: colors.border,
-            backgroundColor: isExpanded ? colors.primary + '10' : 'transparent'
+            backgroundColor: colors.cardBackground,
+            ...(isExpanded ? { borderWidth: 2, borderColor: colors.primary } : {})
           },
           compact && styles.selectorCompact
         ]} 
@@ -127,7 +128,10 @@ export default function OptionSelector({
             styles.selectedText, 
             { color: colors.text },
             compact && styles.selectedTextCompact
-          ]}>
+          ]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {selectedOption?.label || 'Select an option'}
           </Text>
         </View>
@@ -140,7 +144,17 @@ export default function OptionSelector({
         style={[
           styles.optionsContainer, 
           dropdownStyle,
-          { backgroundColor: colors.cardBackground }
+          {
+            backgroundColor: colors.cardBackground,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+            elevation: 4,
+          }
         ]}
       >
         <ScrollView 
@@ -179,6 +193,8 @@ export default function OptionSelector({
                     selectedValue === option.value && styles.selectedOptionText,
                     compact && styles.optionTextCompact
                   ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   {option.label}
                 </Text>
@@ -219,10 +235,13 @@ const styles = StyleSheet.create({
   selectedContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: 0,
+    flex: 1,
   },
   selectedText: {
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
+    flex: 1,
   },
   selectedTextCompact: {
     fontSize: 14,
@@ -254,6 +273,7 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: 0,
   },
   optionText: {
     fontSize: 16,

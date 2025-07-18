@@ -16,11 +16,10 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import { useAnonymousTransformations } from '@/contexts/AnonymousTransformationsContext';
 import Card from '@/components/ui/Card';
 import { TransformSettings } from '@/components/TransformOptions';
-import { logTransformEvent, logError, logApiCall } from '@/utils/logging';
+import { logTransformEvent, logError } from '@/utils/logging';
 import NetInfo from '@react-native-community/netinfo';
+import { generateImage } from '@/utils/api';
 
-const API_URL = 'https://imaginpaws.com/api/generate-human';
-const API_KEY = process.env.EXPO_PUBLIC_IMAGINPAWS_API_KEY;
 const TRANSFORM_TIMEOUT = 120000; // 120 seconds
 
 export default function TransformingScreen() {
@@ -48,19 +47,6 @@ export default function TransformingScreen() {
     if (!params.settings) {
       throw new Error('No settings provided');
     }
-    if (!API_URL || !API_KEY) {
-      throw new Error('API configuration is missing. Please contact support.');
-    }
-  };
-
-  const getErrorMessage = (response: Response, errorText: string) => {
-    // Handle 500 errors with user-friendly message
-    if (response.status === 500) {
-      return "I'm sorry, something went wrong. Please try again.";
-    }
-    
-    // For other API errors, show the generic API error message
-    return `API error: ${response.status}`;
   };
 
   const performTransformation = async () => {
@@ -77,59 +63,26 @@ export default function TransformingScreen() {
       
       logTransformEvent('started', { settings });
 
-      const formData = new FormData();
-
-      let imageFile;
-      if (Platform.OS === 'web') {
-        const response = await fetch(params.photo);
-        const blob = await response.blob();
-        imageFile = new File([blob], 'pet.jpg', { type: 'image/jpeg' });
-      } else {
-        imageFile = {
-          uri: params.photo,
-          type: 'image/jpeg',
-          name: 'pet.jpg',
-        };
-      }
-      formData.append('image', imageFile as any);
-      formData.append('user_id', 'anonymous');
-
-      Object.entries(settings).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
-
       // Create AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), TRANSFORM_TIMEOUT);
 
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-          },
-          body: formData,
-          signal: controller.signal,
+        const result = await generateImage({
+          transformation_type: 'pet-to-person',
+          user_id: 'anonymous',
+          image: params.photo,
+          gender: settings.sex,
+          style: settings.style,
+          clothing: settings.clothing,
         });
 
         clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          logApiCall('POST', API_URL, response.status, errorText);
-          
-          // Use the new error message function
-          const userFriendlyError = getErrorMessage(response, errorText);
-          throw new Error(userFriendlyError);
-        }
-
-        const data = await response.json();
-        logApiCall('POST', API_URL, response.status, null, { success: true });
-
         // Record the transformation for anonymous users
         await recordTransformation({
-          originalPhoto: data.original_photo,
-          resultPhoto: data.result_photo,
+          originalPhoto: result.original_photo,
+          resultPhoto: result.result_photo,
           settings,
         });
 
@@ -138,13 +91,13 @@ export default function TransformingScreen() {
         router.push({
           pathname: '/result',
           params: {
-            originalPhoto: data.original_photo,
-            resultPhoto: data.result_photo,
+            originalPhoto: result.original_photo,
+            resultPhoto: result.result_photo,
             settings: JSON.stringify(settings)
           }
         });
       } catch (err) {
-        if (err.name === 'AbortError') {
+        if ((err as any).name === 'AbortError') {
           throw new Error('Transformation timed out. Please try again.');
         }
         throw err;

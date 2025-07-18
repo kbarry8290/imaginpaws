@@ -54,10 +54,10 @@ export default function WelcomeScreen() {
 
         <View style={styles.textContainer}>
           <Text style={[styles.title, { color: colors.text }]}>
-            🐾 Ever wondered what your pet would look like as a person?
+            🐾 Ready to see your pet like never before?
           </Text>
           <Text style={[styles.subtitle, { color: colors.placeholderText }]}>
-            Transform your pet in one tap!
+          Turn any pet photo into something fun—whether it’s a human lookalike or a custom portrait.
           </Text>
         </View>
 

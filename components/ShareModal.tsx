@@ -13,6 +13,7 @@ import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
 import { Share2, Download, Lock, X, Image as ImageIcon } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCredits } from '@/contexts/CreditsContext';
 import Card from './ui/Card';
 import Button from './ui/Button';
 
@@ -36,10 +37,11 @@ export default function ShareModal({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
+  const { credits } = useCredits();
   const [includeWatermark, setIncludeWatermark] = React.useState(true);
   
-  // Simulating pro user status - replace with actual check
-  const isPro = false;
+  // User is considered Pro if they have any credits left (not including free credits)
+  const isPro = credits > 0;
 
   const handleAction = (type: 'single' | 'combined') => {
     onShare(type, includeWatermark);

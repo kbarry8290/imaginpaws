@@ -1,0 +1,373 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Platform,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { RadioButton } from 'react-native-paper';
+import { portraitOptions, PortraitType, PortraitAttributeSet } from '@/constants/portraitOptions';
+import { generateImage } from '@/utils/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCredits } from '@/contexts/CreditsContext';
+import Layout from '@/constants/Layout';
+import Button from '@/components/ui/Button';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { Sparkles, ArrowLeft } from 'lucide-react-native';
+import { logTransformEvent, logError } from '@/utils/logging';
+import NetInfo from '@react-native-community/netinfo';
+import PhotoUploader from '@/components/PhotoUploader';
+import PortraitOptions, { PortraitSettings } from '@/components/PortraitOptions';
+import PortraitTypeSelector from '@/components/PortraitTypeSelector';
+import { supabase } from '@/lib/supabase';
+
+type Gender = 'male' | 'female';
+
+interface PortraitAttributes {
+  portrait_type: PortraitType;
+  gender: Gender;
+  outfit: string;
+  accessories: string;
+  background: string;
+  art_style: string;
+  mood: string;
+}
+
+function getRandomItem<T>(array: T[]): T {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+function getRandomAttributes(type: PortraitType): Omit<PortraitSettings, 'portrait_type' | 'gender'> {
+  const options = portraitOptions[type];
+  return {
+    outfit: getRandomItem(options.outfits),
+    accessories: getRandomItem(options.accessories),
+    background: getRandomItem(options.backgrounds),
+    art_style: getRandomItem(options.art_styles),
+    mood: getRandomItem(options.moods),
+  };
+}
+
+export default function PetPortraitScreen() {
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const { user } = useAuth();
+  const { canScan, consumeCredit } = useCredits();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedOption, setExpandedOption] = useState<string | null>(null);
+
+  const [image, setImage] = useState<string | null>(null);
+  const [settings, setSettings] = useState<PortraitSettings>({
+    portrait_type: 'royalty',
+    gender: 'male',
+    outfit: '',
+    accessories: '',
+    background: '',
+    art_style: '',
+    mood: '',
+  });
+
+  useEffect(() => {
+    // Set random defaults when portrait type changes
+    const randomAttrs = getRandomAttributes(settings.portrait_type);
+    setSettings(prev => ({
+      ...prev,
+      ...randomAttrs,
+    }));
+  }, [settings.portrait_type]);
+
+  const handleExpand = (optionName: string) => {
+    setExpandedOption(expandedOption === optionName ? null : optionName);
+  };
+
+  const checkNetworkConnection = async () => {
+    const netInfo = await NetInfo.fetch();
+    if (!netInfo.isConnected) {
+      throw new Error('No internet connection. Please check your network and try again.');
+    }
+  };
+
+  const validateInputs = () => {
+    if (!image) {
+      throw new Error('Please upload a pet photo first!');
+    }
+    if (!user) {
+      throw new Error('Please sign in to transform your pet.');
+    }
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      alert('Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  const handleSettingsChange = (key: keyof PortraitSettings, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleGenerate = async () => {
+    try {
+      setError(null);
+      
+      // Validate inputs
+      validateInputs();
+      
+      // Check network connection
+      await checkNetworkConnection();
+
+      if (!canScan) {
+        router.push('/pro');
+        return;
+      }
+
+      setIsGenerating(true);
+      logTransformEvent('started', { settings });
+
+      if (!image) {
+        throw new Error('No image selected');
+      }
+
+      // Call generateImage and get both URLs from the backend
+      const { result_photo, original_photo } = await generateImage({
+        transformation_type: 'portrait',
+        user_id: user!.id,
+        image,
+        gender: settings.gender,
+        portrait_type: settings.portrait_type,
+        outfit: settings.outfit,
+        accessories: settings.accessories,
+        background: settings.background,
+        art_style: settings.art_style,
+        mood: settings.mood,
+      });
+
+      // Only consume credit after successful transformation
+      const success = await consumeCredit();
+      if (!success) {
+        throw new Error('Failed to consume credit');
+      }
+
+      // Log and check result_photo before saving
+      console.log('Result photo URL to save:', result_photo);
+      if (!result_photo || !original_photo) {
+        setError('No result or original photo returned from the server. Transformation will not be saved.');
+        return;
+      }
+
+      if (user) {
+        try {
+          // Prepare payload with only defined, required fields
+          const payload: Record<string, any> = {
+            user_id: user.id,
+            original_photo: original_photo, // Use S3 URL from backend
+            result_photo: result_photo,
+            transformation_type: 'portrait',
+            portrait_type: settings.portrait_type,
+            sex: settings.gender,
+            outfit: settings.outfit,
+            accessories: settings.accessories,
+            background: settings.background,
+            mood: settings.mood,
+            art_style: settings.art_style,
+          };
+          // Remove any undefined/null fields (for non-nullable columns)
+          Object.keys(payload).forEach(key => {
+            if (payload[key] === undefined || payload[key] === null) {
+              delete payload[key];
+            }
+          });
+          const { data, error } = await supabase
+            .from('transformations')
+            .insert(payload);
+          console.log('Insert result:', {
+            data,
+            errorMessage: error?.message,
+            errorDetails: error?.details,
+            errorHint: error?.hint
+          });
+        } catch (err) {
+          console.error('Error saving transformation:', err);
+          logError(err as Error, { context: 'saving_transformation' });
+        }
+      }
+
+      logTransformEvent('completed', { 
+        settings,
+        userId: user?.id 
+      });
+
+      // Navigate to results screen with the generated image
+      router.push({
+        pathname: '/results',
+        params: {
+          originalPhoto: original_photo, // Use S3 URL for results screen too
+          resultPhoto: result_photo,
+          settings: JSON.stringify(settings),
+        },
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate portrait. Please try again.');
+      logTransformEvent('failed', { 
+        error: err.message,
+        settings,
+        userId: user?.id
+      });
+      logError(err, { 
+        context: 'transform',
+        settings,
+        userId: user?.id
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)/transform')} style={styles.backButton}>
+          <ArrowLeft size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text }]}>Pet Portrait</Text>
+      </View>
+
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {error && (
+          <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
+            <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+          </View>
+        )}
+
+        <View style={styles.photoSection}>
+          <PhotoUploader 
+            photo={image}
+            onPhotoSelect={setImage}
+            buttonText="Choose Pet Photo"
+          />
+        </View>
+
+        <View style={[styles.typeSelectorSection, expandedOption === 'portrait_type' && styles.typeSelectorSectionExpanded]}>
+          <PortraitTypeSelector
+            selectedType={settings.portrait_type}
+            onSelect={(type) => handleSettingsChange('portrait_type', type)}
+            isExpanded={expandedOption === 'portrait_type'}
+            onExpand={() => handleExpand('portrait_type')}
+          />
+        </View>
+        
+        <View style={styles.optionsSection}>
+          <PortraitOptions 
+            settings={settings}
+            onSettingsChange={handleSettingsChange}
+          />
+        </View>
+      </ScrollView>
+
+      <View 
+        style={[
+          styles.buttonContainer, 
+          { 
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+          }
+        ]}
+      >
+        <Button
+          title="Generate Portrait"
+          onPress={handleGenerate}
+          disabled={!image || isGenerating}
+          isLoading={isGenerating}
+          icon={<Sparkles size={24} color="white" />}
+        />
+      </View>
+
+      {isGenerating && <LoadingOverlay />}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: Layout.spacing.l,
+    paddingTop: Platform.OS === 'android' ? Layout.spacing.xl : Layout.spacing.l,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Layout.spacing.l,
+  },
+  backButton: {
+    marginRight: Layout.spacing.m,
+  },
+  title: {
+    fontSize: 20,
+    fontFamily: 'Nunito-Bold',
+  },
+  errorContainer: {
+    padding: Layout.spacing.m,
+    borderRadius: Layout.borderRadius.medium,
+    marginBottom: Layout.spacing.m,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Nunito-Regular',
+  },
+  photoSection: {
+    marginBottom: Layout.spacing.xl,
+  },
+  typeSelectorSection: {
+    marginBottom: Layout.spacing.l,
+    zIndex: 10,
+    elevation: 10,
+  },
+  typeSelectorSectionExpanded: {
+    zIndex: 100,
+    elevation: 100,
+  },
+  optionsSection: {
+    marginBottom: Layout.spacing.xl,
+    zIndex: 1,
+    elevation: 1,
+  },
+  buttonContainer: {
+    padding: Layout.spacing.l,
+    borderTopWidth: 1,
+  },
+}); 

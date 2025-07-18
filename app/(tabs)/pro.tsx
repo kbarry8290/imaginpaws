@@ -49,18 +49,6 @@ export default function ProScreen() {
     }
   };
 
-  if (Platform.OS === 'web') {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.webMessage}>
-          <Text style={[styles.webMessageText, { color: colors.text }]}>
-            Credits are only available on iOS and Android devices.
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView 

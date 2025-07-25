@@ -42,7 +42,7 @@ export default function LoginScreen() {
       setLoading(true);
       setError(null);
       await signIn(email, password);
-      router.replace('/(tabs)/transform');
+      router.replace('/(tabs)/transform' as any);
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {

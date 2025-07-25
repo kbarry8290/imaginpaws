@@ -29,15 +29,15 @@ export default function ImaginPawsHome() {
   const router = useRouter();
 
   const handlePetToPerson = () => {
-    router.push('/(screens)/pet-to-person');
+    router.push('/(screens)/pet-to-person' as any);
   };
 
   const handlePetPortrait = () => {
-    router.push('/(screens)/pet-portrait');
+    router.push('/(screens)/pet-portrait' as any);
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#18181b' }]}>  
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>  
       {/* Subtle paw print bg */}
       <View style={styles.pawBg} pointerEvents="none">
         {/* Could use SVG or image for more detail */}
@@ -46,8 +46,8 @@ export default function ImaginPawsHome() {
         {/* Header + mascot */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.headline}>Welcome to ImaginPaws!</Text>
-            <Text style={styles.tagline}>Turn your pet into art or a human lookalike.</Text>
+            <Text style={[styles.headline, { color: colors.text }]}>Welcome to ImaginPaws!</Text>
+            <Text style={[styles.tagline, { color: colors.placeholderText }]}>Turn your pet into art or a human lookalike.</Text>
           </View>
           <Image
             source={require('@/assets/images/imaginpaws_logo.png')}
@@ -59,10 +59,10 @@ export default function ImaginPawsHome() {
 
         {/* Actions */}
         <View style={styles.actionsSection}>
-          <Text style={styles.actionsTitle}>What would you like to create?</Text>
+          <Text style={[styles.actionsTitle, { color: colors.text }]}>What would you like to create?</Text>
 
           {/* Pet to Person Card */}
-          <View style={styles.actionCard}>
+          <View style={[styles.actionCard, { backgroundColor: colors.cardBackground }]}>
             <Image
               source={require('@/assets/images/kittentogirl.png')}
               style={styles.actionCardImg}
@@ -72,13 +72,13 @@ export default function ImaginPawsHome() {
               title="Pet to Person"
               onPress={handlePetToPerson}
               icon={<Wand2 size={28} color="white" />}
-              style={styles.actionCardButton}
+              style={[styles.actionCardButton, { backgroundColor: colors.primary }]}
               textStyle={styles.actionCardButtonText}
             />
           </View>
 
           {/* Pet Portrait Card */}
-          <View style={styles.actionCard}>
+          <View style={[styles.actionCard, { backgroundColor: colors.cardBackground }]}>
             <Image
               source={require('@/assets/images/dog_retro.jpg')}
               style={styles.actionCardImg}
@@ -88,15 +88,15 @@ export default function ImaginPawsHome() {
               title="Pet Portrait"
               onPress={handlePetPortrait}
               icon={<ImageIcon size={28} color="white" />}
-              style={styles.actionCardButton}
+              style={[styles.actionCardButton, { backgroundColor: colors.primary }]}
               textStyle={styles.actionCardButtonText}
             />
           </View>
 
           {/* Daily idea */}
-          <View style={styles.dailyIdea}>
-            <Lightbulb color="#fde68a" size={22} style={{ marginRight: 8 }} />
-            <Text style={styles.dailyIdeaText}><Text style={{ fontWeight: 'bold' }}>Today’s idea:</Text> Try a Medieval Pet Portrait!</Text>
+          <View style={[styles.dailyIdea, { backgroundColor: colors.cardBackground }]}>
+            <Lightbulb color={colors.accent} size={22} style={{ marginRight: 8 }} />
+            <Text style={[styles.dailyIdeaText, { color: colors.text }]}><Text style={{ fontWeight: 'bold' }}>Today's idea:</Text> Try a Medieval Pet Portrait!</Text>
           </View>
         </View>
       </ScrollView>

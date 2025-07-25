@@ -9,7 +9,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Clipboard,
+  Alert,
 } from 'react-native';
+import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
@@ -133,7 +136,23 @@ export default function ResultCard({
         link.click();
         document.body.removeChild(link);
       } else {
-        alert('Download feature coming soon to mobile!');
+        // Native mobile download
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Please grant photo library access to save images.');
+          return;
+        }
+
+        const fileName = `imaginpaws-${type}-${Date.now()}.jpg`;
+        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+        
+        const downloadResult = await FileSystem.downloadAsync(downloadUrl, fileUri);
+        if (downloadResult.status !== 200) {
+          throw new Error('Failed to download image');
+        }
+
+        const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
+        Alert.alert('Success!', `Image saved to your photo library.`, [{ text: 'OK' }]);
       }
 
       setDownloadModalVisible(false);

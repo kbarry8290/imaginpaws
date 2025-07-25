@@ -37,7 +37,7 @@ export default function ResultScreen() {
     router.push('/login');
   };
   const handleClose = () => {
-    router.replace('/');
+    router.replace('/welcome');
   };
 
   if (!params.originalPhoto || !params.resultPhoto || !settings) {

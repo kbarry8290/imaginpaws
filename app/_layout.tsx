@@ -16,6 +16,7 @@ import { CreditsProvider } from '@/contexts/CreditsContext';
 import { AnonymousTransformationsProvider } from '@/contexts/AnonymousTransformationsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { logAppStartup, logScreenView } from '@/utils/logging';
+import { initMixpanel } from '@/utils/mixpanel';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
@@ -44,7 +45,7 @@ function useProtectedRoute(user: any) {
     if (!user && !inAuthGroup && !inOnboardingGroup) {
       router.replace('/welcome');
     } else if (user && (inAuthGroup || inOnboardingGroup)) {
-      router.replace('/(tabs)/transform');
+      router.replace('/(tabs)/transform' as any);
     }
   }, [user, segments]);
 
@@ -91,6 +92,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     logAppStartup();
+    initMixpanel().then(() => {
+      console.log('✅ [Mixpanel] Initialization completed');
+    });
   }, []);
 
   useEffect(() => {

@@ -25,7 +25,8 @@ import Layout from '@/constants/Layout';
 import Button from '@/components/ui/Button';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { Sparkles, ArrowLeft } from 'lucide-react-native';
-import { logTransformEvent, logError } from '@/utils/logging';
+import { logTransformEvent, logError, logApiCall } from '@/utils/logging';
+import { trackTransformEvent, startTransformationTiming, trackTransformationTiming } from '@/utils/mixpanel';
 import NetInfo from '@react-native-community/netinfo';
 import PhotoUploader from '@/components/PhotoUploader';
 import PortraitOptions, { PortraitSettings } from '@/components/PortraitOptions';
@@ -153,6 +154,8 @@ export default function PetPortraitScreen() {
 
       setIsGenerating(true);
       logTransformEvent('started', { settings });
+      trackTransformEvent('started', 'portrait', settings);
+      startTransformationTiming('portrait');
 
       if (!image) {
         throw new Error('No image selected');
@@ -226,6 +229,8 @@ export default function PetPortraitScreen() {
         settings,
         userId: user?.id 
       });
+      trackTransformEvent('completed', 'portrait', { ...settings, userId: user?.id });
+      trackTransformationTiming('portrait', true, settings);
 
       // Navigate to results screen with the generated image
       router.push({
@@ -243,6 +248,8 @@ export default function PetPortraitScreen() {
         settings,
         userId: user?.id
       });
+      trackTransformEvent('failed', 'portrait', { error: err.message, ...settings, userId: user?.id });
+      trackTransformationTiming('portrait', false, settings, err.message);
       logError(err, { 
         context: 'transform',
         settings,
@@ -256,7 +263,7 @@ export default function PetPortraitScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)/transform')} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)/transform' as any)} style={styles.backButton}>
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Pet Portrait</Text>

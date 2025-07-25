@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCredits } from '@/contexts/CreditsContext';
 import { logTransformEvent, logError, logApiCall } from '@/utils/logging';
+import { trackTransformEvent, startTransformationTiming, trackTransformationTiming } from '@/utils/mixpanel';
 import NetInfo from '@react-native-community/netinfo';
 import { generateImage } from '@/utils/api';
 
@@ -86,6 +87,8 @@ export default function PetToPersonScreen() {
 
       setIsTransforming(true);
       logTransformEvent('started', { settings: transformSettings });
+      trackTransformEvent('started', 'pet-to-person', transformSettings);
+      startTransformationTiming('pet-to-person');
 
       // Create AbortController for timeout
       const controller = new AbortController();
@@ -160,6 +163,8 @@ export default function PetToPersonScreen() {
           settings: transformSettings,
           userId: user?.id 
         });
+        trackTransformEvent('completed', 'pet-to-person', { ...transformSettings, userId: user?.id });
+        trackTransformationTiming('pet-to-person', true, transformSettings);
 
         router.push({
           pathname: '/results',
@@ -182,6 +187,8 @@ export default function PetToPersonScreen() {
         settings: transformSettings,
         userId: user?.id
       });
+      trackTransformEvent('failed', 'pet-to-person', { error: err.message, ...transformSettings, userId: user?.id });
+      trackTransformationTiming('pet-to-person', false, transformSettings, err.message);
       logError(err, { 
         context: 'transform',
         settings: transformSettings,
@@ -195,7 +202,7 @@ export default function PetToPersonScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)/transform')} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)/transform' as any)} style={styles.backButton}>
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Pet to Person</Text>

@@ -8,47 +8,85 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
-import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
-import { LogIn, Mail, Lock, ArrowLeft } from 'lucide-react-native';
+import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react-native';
 import Card from '@/components/ui/Card';
+import { supabase } from '@/lib/supabase';
 
-export default function LoginScreen() {
+export default function ForgotPasswordScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { signIn } = useAuth();
   
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
+  const handleResetPassword = async () => {
     if (!email) {
       setError('Please enter your email address');
       return;
     }
-    if (!password) {
-      setError('Please enter your password');
-      return;
-    }
+
     try {
       setLoading(true);
       setError(null);
-      await signIn(email, password);
-      router.replace('/(tabs)/transform' as any);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'imaginpaws://reset-password',
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      setError(err.message || 'Failed to send reset email');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleBackToLogin = () => {
+    router.back();
+  };
+
+  if (success) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.content}>
+          <View style={styles.successContainer}>
+            <CheckCircle size={64} color={colors.success || '#10B981'} />
+            <Text style={[styles.successTitle, { color: colors.text }]}>
+              Check Your Email
+            </Text>
+            <Text style={[styles.successMessage, { color: colors.placeholderText }]}>
+              We've sent a password reset link to:
+            </Text>
+            <Text style={[styles.emailText, { color: colors.primary }]}>
+              {email}
+            </Text>
+            <Text style={[styles.successMessage, { color: colors.placeholderText }]}>
+              Click the link in your email to reset your password.
+            </Text>
+            <Button
+              title="Back to Sign In"
+              onPress={handleBackToLogin}
+              style={styles.button}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -63,15 +101,21 @@ export default function LoginScreen() {
           >
             <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>
+          
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text }]}>Welcome Back! 👋</Text>
-            <Text style={[styles.subtitle, { color: colors.placeholderText }]}>Sign in with your email and password</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Forgot Password?</Text>
+            <Text style={[styles.subtitle, { color: colors.placeholderText }]}>
+              Enter your email address and we'll send you a link to reset your password
+            </Text>
           </View>
+
           {error && (
             <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}> 
+              <AlertCircle size={20} color={colors.error} />
               <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
             </View>
           )}
+
           <View style={styles.form}>
             <Card style={styles.formCard}>
               <View style={styles.inputContainer}>
@@ -85,47 +129,18 @@ export default function LoginScreen() {
                     onChangeText={setEmail}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    autoFocus
                   />
                 </View>
               </View>
-              <View style={styles.inputContainer}>
-                <View style={[styles.inputWrapper, { borderColor: colors.border }]}> 
-                  <Lock size={20} color={colors.placeholderText} />
-                  <TextInput
-                    style={[styles.input, { color: colors.text }]}
-                    placeholder="Password"
-                    placeholderTextColor={colors.placeholderText}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                  />
-                </View>
-              </View>
+              
               <Button
-                title="Sign In"
-                onPress={handleLogin}
+                title="Send Reset Link"
+                onPress={handleResetPassword}
                 isLoading={loading}
-                icon={<LogIn size={24} color="white" />}
                 style={styles.button}
               />
             </Card>
-            <TouchableOpacity 
-              style={styles.forgotPasswordContainer}
-              onPress={() => router.push('/(auth)/forgot-password' as any)}
-            >
-              <Text style={[styles.linkText, { color: colors.primary }]}>
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.linkContainer}
-              onPress={() => router.push('/signup')}
-            >
-              <Text style={[styles.linkText, { color: colors.placeholderText }]}> 
-                Don't have an account?{' '}
-                <Text style={{ color: colors.primary }}>Sign Up</Text>
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -152,11 +167,13 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontFamily: 'Nunito-ExtraBold',
     marginBottom: Layout.spacing.xs,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Nunito-Regular',
     textAlign: 'center',
+    lineHeight: 24,
   },
   form: {
     gap: Layout.spacing.m,
@@ -185,24 +202,15 @@ const styles = StyleSheet.create({
     marginTop: Layout.spacing.s,
   },
   errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: Layout.spacing.m,
     borderRadius: Layout.borderRadius.small,
     marginBottom: Layout.spacing.m,
+    gap: Layout.spacing.s,
   },
   errorText: {
-    fontSize: 14,
-    fontFamily: 'Nunito-Regular',
-    textAlign: 'center',
-  },
-  linkContainer: {
-    alignItems: 'center',
-    marginTop: Layout.spacing.m,
-  },
-  forgotPasswordContainer: {
-    alignItems: 'center',
-    marginTop: Layout.spacing.s,
-  },
-  linkText: {
+    flex: 1,
     fontSize: 14,
     fontFamily: 'Nunito-Regular',
   },
@@ -210,4 +218,30 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.l,
     padding: Layout.spacing.s,
   },
-});
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Layout.spacing.l,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontFamily: 'Nunito-Bold',
+    marginTop: Layout.spacing.l,
+    marginBottom: Layout.spacing.m,
+    textAlign: 'center',
+  },
+  successMessage: {
+    fontSize: 16,
+    fontFamily: 'Nunito-Regular',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: Layout.spacing.s,
+  },
+  emailText: {
+    fontSize: 16,
+    fontFamily: 'Nunito-Bold',
+    marginBottom: Layout.spacing.m,
+    textAlign: 'center',
+  },
+}); 

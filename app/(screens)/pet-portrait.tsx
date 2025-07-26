@@ -9,6 +9,7 @@ import {
   Platform,
   SafeAreaView,
   Alert,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -68,7 +69,6 @@ export default function PetPortraitScreen() {
   const { canScan, consumeCredit } = useCredits();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedOption, setExpandedOption] = useState<string | null>(null);
 
   const [image, setImage] = useState<string | null>(null);
   const [settings, setSettings] = useState<PortraitSettings>({
@@ -90,9 +90,7 @@ export default function PetPortraitScreen() {
     }));
   }, [settings.portrait_type]);
 
-  const handleExpand = (optionName: string) => {
-    setExpandedOption(expandedOption === optionName ? null : optionName);
-  };
+
 
   const checkNetworkConnection = async () => {
     const netInfo = await NetInfo.fetch();
@@ -269,10 +267,16 @@ export default function PetPortraitScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Pet Portrait</Text>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={true}
+        >
         {error && (
           <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
             <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
@@ -287,12 +291,10 @@ export default function PetPortraitScreen() {
           />
         </View>
 
-        <View style={[styles.typeSelectorSection, expandedOption === 'portrait_type' && styles.typeSelectorSectionExpanded]}>
+        <View style={styles.typeSelectorSection}>
           <PortraitTypeSelector
             selectedType={settings.portrait_type}
             onSelect={(type) => handleSettingsChange('portrait_type', type)}
-            isExpanded={expandedOption === 'portrait_type'}
-            onExpand={() => handleExpand('portrait_type')}
           />
         </View>
         
@@ -302,7 +304,8 @@ export default function PetPortraitScreen() {
             onSettingsChange={handleSettingsChange}
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <View 
         style={[
@@ -334,6 +337,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: Layout.spacing.l,
     paddingTop: Platform.OS === 'android' ? Layout.spacing.xl : Layout.spacing.l,
+    paddingBottom: Layout.spacing.xxl + 80, // Add extra bottom padding for the button
   },
   headerRow: {
     flexDirection: 'row',
@@ -361,12 +365,6 @@ const styles = StyleSheet.create({
   },
   typeSelectorSection: {
     marginBottom: Layout.spacing.l,
-    zIndex: 10,
-    elevation: 10,
-  },
-  typeSelectorSectionExpanded: {
-    zIndex: 100,
-    elevation: 100,
   },
   optionsSection: {
     marginBottom: Layout.spacing.xl,

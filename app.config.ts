@@ -4,6 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "ImaginPaws",
   slug: "ImaginPaws",
+  scheme: "imaginpaws",
   extra: {
     ...config.extra, // ← Keep any existing values!
     EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,

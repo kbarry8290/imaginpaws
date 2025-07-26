@@ -50,7 +50,7 @@ export default function SignupScreen() {
       setLoading(true);
       setError(null);
       await signUp(email, password);
-      router.replace('/');
+      router.replace('/' as any);
     } catch (err: any) {
       setError(err.message || 'Failed to sign up');
     } finally {
@@ -142,7 +142,7 @@ export default function SignupScreen() {
 
           <TouchableOpacity 
             style={styles.linkContainer}
-            onPress={() => router.push('/login')}
+            onPress={() => router.push('/(auth)/login' as any)}
           >
             <Text style={[styles.linkText, { color: colors.placeholderText }]}>
               Already have an account?{' '}

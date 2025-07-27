@@ -4,7 +4,7 @@
     "slug": "imaginpaws",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/appicon.png",
     "scheme": "imaginpaws",
     "userInterfaceStyle": "automatic",
     "ios": {

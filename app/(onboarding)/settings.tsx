@@ -40,7 +40,7 @@ const steps: Step[] = [
     ],
   },
   {
-    id: 'sex',
+    id: 'gender',
     title: 'Boy or Girl Vibes?',
     subtitle: 'Choose the vibe for your pet\'s human look.',
     options: [
@@ -113,7 +113,7 @@ export default function SettingsScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [settings, setSettings] = useState<TransformSettings>({
     age: '',
-    sex: '',
+    gender: '',
     style: '',
     personality: '',
     clothing: '',

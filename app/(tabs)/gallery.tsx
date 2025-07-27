@@ -85,7 +85,7 @@ export default function GalleryScreen() {
   const handleTransformationPress = (transformation: Transformation) => {
     const settings: TransformSettings = {
       style: transformation.style,
-      sex: transformation.sex,
+      gender: transformation.sex,
       personality: transformation.personality,
       clothing: transformation.clothing,
       background: transformation.background,

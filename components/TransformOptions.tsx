@@ -5,7 +5,7 @@ import Layout from '@/constants/Layout';
 import Card from './ui/Card';
 
 export type TransformSettings = {
-  sex: string;
+  gender: string;
   style: string;
   personality: string;
   clothing: string;
@@ -28,7 +28,7 @@ export default function TransformOptions({
     setExpandedOption(expandedOption === optionName ? null : optionName);
   };
 
-  const sexOptions = [
+  const genderOptions = [
     { label: 'Male', value: 'male', emoji: '👨' },
     { label: 'Female', value: 'female', emoji: '👩' },
   ];
@@ -85,13 +85,13 @@ export default function TransformOptions({
       <View style={styles.optionsGrid}>
         <View style={styles.column}>
           <OptionSelector
-            name="sex"
-            label="Sex"
-            options={sexOptions}
-            selectedValue={settings.sex}
-            onSelect={(value) => onSettingsChange('sex', value)}
+            name="gender"
+            label="Gender"
+            options={genderOptions}
+            selectedValue={settings.gender}
+            onSelect={(value) => onSettingsChange('gender', value)}
             compact
-            isExpanded={expandedOption === 'sex'}
+            isExpanded={expandedOption === 'gender'}
             onExpand={handleExpand}
             zIndex={6}
           />

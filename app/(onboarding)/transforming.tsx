@@ -72,7 +72,7 @@ export default function TransformingScreen() {
           transformation_type: 'pet-to-person',
           user_id: 'anonymous',
           image: params.photo,
-          gender: settings.sex,
+          gender: settings.gender,
           style: settings.style,
           clothing: settings.clothing,
         });

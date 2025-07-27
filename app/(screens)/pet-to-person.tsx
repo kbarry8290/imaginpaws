@@ -39,7 +39,7 @@ export default function PetToPersonScreen() {
   const [isTransforming, setIsTransforming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transformSettings, setTransformSettings] = useState<TransformSettings>({
-    sex: 'male',
+    gender: 'male',
     style: 'realistic',
     personality: 'playful',
     clothing: 'casual',
@@ -103,7 +103,7 @@ export default function PetToPersonScreen() {
           transformation_type: 'pet-to-person',
           user_id: user.id,
           image: petPhoto,
-          gender: transformSettings.sex,
+          gender: transformSettings.gender,
           style: transformSettings.style,
           clothing: transformSettings.clothing,
         });
@@ -132,7 +132,7 @@ export default function PetToPersonScreen() {
               result_photo: resultPhoto,
               transformation_type: 'pet-to-person',
               style: transformSettings.style,
-              sex: transformSettings.sex,
+              sex: transformSettings.gender,
               age: transformSettings.age,
               outfit: transformSettings.clothing,
               personality: transformSettings.personality,

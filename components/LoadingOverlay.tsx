@@ -125,7 +125,7 @@ export default function LoadingOverlay() {
         </Text>
         
         <Text style={[styles.subText, { color: colors.placeholderText }]}>
-          Our AI is working its magic! 🪄
+          This could take a minute - Our AI is working its magic! 🪄
         </Text>
       </View>
     </View>

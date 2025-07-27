@@ -50,7 +50,7 @@ export default function SignupScreen() {
       setLoading(true);
       setError(null);
       await signUp(email, password);
-      router.replace('/' as any);
+      router.replace('/(tabs)/transform' as any);
     } catch (err: any) {
       setError(err.message || 'Failed to sign up');
     } finally {

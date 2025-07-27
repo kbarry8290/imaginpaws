@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView, View, Text, StyleSheet, ScrollView, ActivityIndicator, Platform, TouchableOpacity, Image, Share, Alert } from 'react-native';
+import { SafeAreaView, View, Text, StyleSheet, ScrollView, ActivityIndicator, Platform, TouchableOpacity, Image, Alert } from 'react-native';
 import Colors from '@/constants/Colors';
 import Layout from '@/constants/Layout';
 import Button from '@/components/ui/Button';

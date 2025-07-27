@@ -4,7 +4,6 @@ import {
   Text, 
   StyleSheet, 
   Image, 
-  Share,
   Platform,
   ActivityIndicator,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
@@ -100,10 +100,41 @@ export default function ResultCard({
         await Clipboard.setString(shareUrl);
         alert('Link copied to clipboard! You can now share it manually.');
       } else {
-        await Share.share({
-          url: shareUrl,
-          message: 'Check out this AI-transformed pet human!',
+        // Download the image to a temporary file and share it
+        const fileName = `imaginpaws-${type}-${Date.now()}.jpg`;
+        const tempFileUri = `${FileSystem.cacheDirectory}${fileName}`;
+        
+        console.log('Downloading image from:', shareUrl);
+        console.log('Saving to temp file:', tempFileUri);
+        
+        const downloadResult = await FileSystem.downloadAsync(shareUrl, tempFileUri);
+        
+        if (downloadResult.status !== 200) {
+          throw new Error('Failed to download image for sharing');
+        }
+
+        console.log('Image downloaded successfully to:', downloadResult.uri);
+        
+        // Check if sharing is available
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (!isAvailable) {
+          throw new Error('Sharing is not available on this device');
+        }
+
+        // Share the local file
+        await Sharing.shareAsync(downloadResult.uri, {
+          mimeType: 'image/jpeg',
+          dialogTitle: 'Share your AI-transformed pet!',
         });
+
+        // Clean up the temporary file
+        try {
+          await FileSystem.deleteAsync(tempFileUri, { idempotent: true });
+          console.log('Temporary file cleaned up successfully');
+        } catch (cleanupError) {
+          console.warn('Failed to clean up temporary file:', cleanupError);
+          // Don't throw error for cleanup failure
+        }
       }
 
       setShareModalVisible(false);

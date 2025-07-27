@@ -23,10 +23,10 @@ export default function WelcomeScreen() {
 
   const handleGetStarted = () => {
     if (canTransform) {
-      router.push('/permissions');
+      router.push('/(onboarding)/permissions' as any);
     } else {
       // If no transformations left, redirect to signup
-      router.push('/signup');
+      router.push('/(auth)/signup' as any);
     }
   };
 
@@ -35,7 +35,7 @@ export default function WelcomeScreen() {
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.authLink}
-          onPress={() => router.push('/login')}
+          onPress={() => router.push('/(auth)/login' as any)}
         >
           <Text style={[styles.authLinkText, { color: colors.primary }]}>
             Sign In
@@ -70,7 +70,7 @@ export default function WelcomeScreen() {
 
         <TouchableOpacity 
           style={styles.signupContainer}
-          onPress={() => router.push('/signup')}
+          onPress={() => router.push('/(auth)/signup' as any)}
         >
           <Text style={[styles.signupText, { color: colors.placeholderText }]}>
             Don't have an account?{' '}

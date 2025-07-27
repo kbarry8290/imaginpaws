@@ -27,14 +27,48 @@ export default function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [validatingToken, setValidatingToken] = useState(true);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if we have the necessary parameters from the deep link
-    if (!params.access_token) {
-      setError('Invalid reset link. Please request a new password reset.');
-    }
+    const validateResetToken = async () => {
+      const token = params.token as string;
+      const type = params.type as string;
+
+      // Check if we have the necessary parameters from the deep link
+      if (type !== 'recovery' || !token) {
+        setError('Invalid reset link. Please request a new password reset.');
+        setValidatingToken(false);
+        return;
+      }
+
+      try {
+        // Validate the token with Supabase
+        const { data, error } = await supabase.auth.exchangeCodeForSession(token);
+        
+        if (error) {
+          console.error('Token validation error:', error);
+          if (error.message.includes('expired') || error.message.includes('invalid')) {
+            setError('This reset link has expired or is invalid. Please request a new password reset.');
+          } else {
+            setError('Failed to validate reset link. Please try again.');
+          }
+          setValidatingToken(false);
+          return;
+        }
+
+        // Token is valid, allow password reset
+        console.log('Reset token validated successfully');
+        setValidatingToken(false);
+      } catch (err: any) {
+        console.error('Unexpected error validating token:', err);
+        setError('An unexpected error occurred. Please try again.');
+        setValidatingToken(false);
+      }
+    };
+
+    validateResetToken();
   }, [params]);
 
   const handleResetPassword = async () => {
@@ -77,6 +111,20 @@ export default function ResetPasswordScreen() {
     router.replace('/(auth)/login' as any);
   };
 
+  if (validatingToken) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.content}>
+          <View style={styles.loadingContainer}>
+            <Text style={[styles.loadingText, { color: colors.text }]}>
+              Validating reset link...
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (success) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -100,7 +148,7 @@ export default function ResetPasswordScreen() {
     );
   }
 
-  if (error && !params.access_token) {
+  if (error && (!params.token || params.type !== 'recovery')) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.content}>
@@ -299,5 +347,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: Layout.spacing.l,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Layout.spacing.l,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontFamily: 'Nunito-Regular',
+    textAlign: 'center',
   },
 }); 

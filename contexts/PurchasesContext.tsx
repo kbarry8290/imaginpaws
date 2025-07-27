@@ -14,7 +14,7 @@ const REVENUECAT_API_KEY = Platform.select({
 
 const CREDIT_PACKS = {
   'scan_pack_3': 3,
-  'scan_pack_8': 8,
+  'scan_pack_8a': 8,
   'scan_pack_25': 25,
 };
 

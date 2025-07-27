@@ -14,7 +14,7 @@ import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
 import { Camera } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
+
 import Card from './ui/Card';
 import { logUserInteraction } from '@/utils/logging';
 
@@ -30,15 +30,9 @@ export default function PhotoUploader({ photo, onPhotoSelect, buttonText = "Choo
 
   const processImage = async (uri: string) => {
     try {
-      const manipResult = await ImageManipulator.manipulateAsync(
-        uri,
-        [], // no transformations needed
-        {
-          format: ImageManipulator.SaveFormat.JPEG,
-          compress: 0.8 // maintain good quality while reducing file size
-        }
-      );
-      return manipResult.uri;
+      // For now, return the original URI without processing
+      // The backend will handle image processing and S3 upload
+      return uri;
     } catch (error) {
       console.error('Error processing image:', error);
       Alert.alert('Error', 'Failed to process image. Please try again.');

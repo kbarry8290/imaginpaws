@@ -40,7 +40,7 @@ export default function ForgotPasswordScreen() {
       setError(null);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'imaginpaws://reset-password',
+        redirectTo: 'imaginpaws://auth/reset-password',
       });
 
       if (error) {

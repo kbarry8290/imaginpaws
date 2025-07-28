@@ -16,7 +16,8 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import { useAnonymousTransformations } from '@/contexts/AnonymousTransformationsContext';
 import Card from '@/components/ui/Card';
 import { TransformSettings } from '@/components/TransformOptions';
-import { logTransformEvent, logError } from '@/utils/logging';
+import { logError } from '@/utils/logging';
+import { trackTransformEvent } from '@/utils/mixpanel';
 import NetInfo from '@react-native-community/netinfo';
 import { generateImage } from '@/utils/api';
 
@@ -61,7 +62,7 @@ export default function TransformingScreen() {
 
       const settings: TransformSettings = JSON.parse(params.settings);
       
-      logTransformEvent('started', { settings });
+      trackTransformEvent('started', 'pet-to-person', settings);
 
       // Create AbortController for timeout
       const controller = new AbortController();
@@ -86,7 +87,7 @@ export default function TransformingScreen() {
           settings,
         });
 
-        logTransformEvent('completed', { settings });
+        trackTransformEvent('completed', 'pet-to-person', settings);
 
         router.push({
           pathname: '/result',
@@ -106,9 +107,9 @@ export default function TransformingScreen() {
       const errorMessage = err.message || 'Failed to transform image. Please try again.';
       setError(errorMessage);
       
-      logTransformEvent('failed', { 
+      trackTransformEvent('failed', 'pet-to-person', { 
         error: errorMessage,
-        settings: params.settings ? JSON.parse(params.settings) : null
+        ...(params.settings ? JSON.parse(params.settings) : {})
       });
       logError(err, { 
         context: 'onboarding_transform',

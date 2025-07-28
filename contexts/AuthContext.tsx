@@ -6,7 +6,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { logAuthEvent } from '@/utils/logging';
+import { trackAuthEvent } from '@/utils/mixpanel';
 
 const SESSION_KEY = 'supabase.session';
 
@@ -37,11 +37,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         // Save session when it changes
         await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        logAuthEvent('login', session.user.id);
+        trackAuthEvent('login', undefined, session.user.id);
       } else {
         // Remove session when logged out
         await AsyncStorage.removeItem(SESSION_KEY);
-        logAuthEvent('logout');
+        trackAuthEvent('logout');
       }
 
       setSession(session);
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Session is valid
           setSession(session);
           setUser(session.user);
-          logAuthEvent('login', session.user.id, { restored: true });
+          trackAuthEvent('login', undefined, session.user.id);
         }
       }
     } catch (error) {
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) throw error;
     if (data.session) {
-      logAuthEvent('signup', data.session.user.id);
+      trackAuthEvent('signup', undefined, data.session.user.id);
     }
   };
 
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) throw error;
     if (data.session) {
-      logAuthEvent('login', data.session.user.id, { method: 'password' });
+      trackAuthEvent('login', 'password', data.session.user.id);
     }
   };
 
@@ -195,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Clear saved session
     await AsyncStorage.removeItem(SESSION_KEY);
-    logAuthEvent('logout');
+    trackAuthEvent('logout');
   };
 
   return (

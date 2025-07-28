@@ -21,7 +21,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCredits } from '@/contexts/CreditsContext';
-import { logTransformEvent, logError, logApiCall } from '@/utils/logging';
+import { logError, logApiCall } from '@/utils/logging';
 import { trackTransformEvent, startTransformationTiming, trackTransformationTiming } from '@/utils/mixpanel';
 import NetInfo from '@react-native-community/netinfo';
 import { generateImage } from '@/utils/api';
@@ -86,7 +86,6 @@ export default function PetToPersonScreen() {
       }
 
       setIsTransforming(true);
-      logTransformEvent('started', { settings: transformSettings });
       trackTransformEvent('started', 'pet-to-person', transformSettings);
       startTransformationTiming('pet-to-person');
 
@@ -159,11 +158,7 @@ export default function PetToPersonScreen() {
           }
         }
 
-        logTransformEvent('completed', { 
-          settings: transformSettings,
-          userId: user?.id 
-        });
-        trackTransformEvent('completed', 'pet-to-person', { ...transformSettings, userId: user?.id });
+                    trackTransformEvent('completed', 'pet-to-person', { ...transformSettings, userId: user?.id });
         trackTransformationTiming('pet-to-person', true, transformSettings);
 
         router.push({
@@ -182,11 +177,6 @@ export default function PetToPersonScreen() {
       }
     } catch (err: any) {
       setError(err.message || 'Failed to transform image. Please try again.');
-      logTransformEvent('failed', { 
-        error: err.message,
-        settings: transformSettings,
-        userId: user?.id
-      });
       trackTransformEvent('failed', 'pet-to-person', { error: err.message, ...transformSettings, userId: user?.id });
       trackTransformationTiming('pet-to-person', false, transformSettings, err.message);
       logError(err, { 

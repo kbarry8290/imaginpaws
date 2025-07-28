@@ -26,7 +26,7 @@ import Layout from '@/constants/Layout';
 import Button from '@/components/ui/Button';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { Sparkles, ArrowLeft } from 'lucide-react-native';
-import { logTransformEvent, logError, logApiCall } from '@/utils/logging';
+import { logError, logApiCall } from '@/utils/logging';
 import { trackTransformEvent, startTransformationTiming, trackTransformationTiming } from '@/utils/mixpanel';
 import NetInfo from '@react-native-community/netinfo';
 import PhotoUploader from '@/components/PhotoUploader';
@@ -151,7 +151,6 @@ export default function PetPortraitScreen() {
       }
 
       setIsGenerating(true);
-      logTransformEvent('started', { settings });
       trackTransformEvent('started', 'portrait', settings);
       startTransformationTiming('portrait');
 
@@ -223,11 +222,7 @@ export default function PetPortraitScreen() {
         }
       }
 
-      logTransformEvent('completed', { 
-        settings,
-        userId: user?.id 
-      });
-      trackTransformEvent('completed', 'portrait', { ...settings, userId: user?.id });
+            trackTransformEvent('completed', 'portrait', { ...settings, userId: user?.id });
       trackTransformationTiming('portrait', true, settings);
 
       // Navigate to results screen with the generated image
@@ -241,11 +236,6 @@ export default function PetPortraitScreen() {
       });
     } catch (err: any) {
       setError(err.message || 'Failed to generate portrait. Please try again.');
-      logTransformEvent('failed', { 
-        error: err.message,
-        settings,
-        userId: user?.id
-      });
       trackTransformEvent('failed', 'portrait', { error: err.message, ...settings, userId: user?.id });
       trackTransformationTiming('portrait', false, settings, err.message);
       logError(err, { 

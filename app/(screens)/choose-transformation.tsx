@@ -50,7 +50,7 @@ export default function ImaginPawsHome() {
             <Text style={[styles.tagline, { color: colors.placeholderText }]}>Turn your pet into art or a human lookalike.</Text>
           </View>
           <Image
-            source={require('@/assets/images/imaginpaws_logo.png')}
+            source={require('@/assets/images/appicon.png')}
             style={styles.mascot}
             resizeMode="contain"
           />

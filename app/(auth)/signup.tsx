@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
@@ -71,6 +72,14 @@ export default function SignupScreen() {
           >
             <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>
+
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('@/assets/images/logo2.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
 
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>
@@ -169,6 +178,14 @@ const styles = StyleSheet.create({
   backButton: {
     padding: Layout.spacing.s,
     marginBottom: Layout.spacing.m,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: Layout.spacing.xl,
+  },
+  logo: {
+    width: 150,
+    height: 50,
   },
   header: {
     alignItems: 'center',

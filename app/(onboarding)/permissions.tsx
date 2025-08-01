@@ -33,11 +33,11 @@ export default function PermissionsScreen() {
         </TouchableOpacity>
         <Card style={styles.card}>
           <Text style={[styles.title, { color: colors.text }]}>
-            We Need a Little Help!
+           Let's get started! First Take or Choose a Photo
           </Text>
           
           <Text style={[styles.description, { color: colors.placeholderText }]}>
-            To work our magic, we need permission to use your camera or photo library. Your pet's pics are private and never shared.
+            To work our magic, we need permission to use your camera or photo library.
           </Text>
 
           <View style={styles.buttonContainer}>

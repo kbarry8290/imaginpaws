@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
@@ -101,6 +102,14 @@ export default function ForgotPasswordScreen() {
           >
             <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>
+          
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('@/assets/images/logo2.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
           
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>Forgot Password?</Text>
@@ -217,6 +226,14 @@ const styles = StyleSheet.create({
   backButton: {
     marginBottom: Layout.spacing.l,
     padding: Layout.spacing.s,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: Layout.spacing.xl,
+  },
+  logo: {
+    width: 150,
+    height: 50,
   },
   successContainer: {
     flex: 1,

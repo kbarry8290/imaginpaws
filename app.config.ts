@@ -5,6 +5,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: "ImaginPaws",
   slug: "ImaginPaws",
   scheme: "imaginpaws",
+  version: "1.0.0",
+  icon: "./assets/images/appicon.png",
   extra: {
     ...config.extra, // ← Keep any existing values!
     EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
@@ -18,5 +20,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     "expo-router"
-  ]
+  ],
+  android: {
+    package: "com.imaginpaws.app",
+    adaptiveIcon: {
+      foregroundImage: "./assets/images/appicon.png",
+      backgroundColor: "#ffffff"
+    }
+  },
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: "com.imaginpaws.app",
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false
+    }
+  }
 });

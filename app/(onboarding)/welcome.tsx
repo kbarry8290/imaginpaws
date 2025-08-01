@@ -46,7 +46,7 @@ export default function WelcomeScreen() {
       <View style={styles.content}>
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: 'https://images.pexels.com/photos/1404819/pexels-photo-1404819.jpeg' }}
+            source={require('@/assets/images/hero.png')}
             style={styles.image}
             resizeMode="cover"
           />

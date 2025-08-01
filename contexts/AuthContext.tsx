@@ -34,12 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session ? 'session exists' : 'no session');
+      
       if (session) {
         // Save session when it changes
+        console.log('Saving session to AsyncStorage');
         await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
         trackAuthEvent('login', undefined, session.user.id);
       } else {
         // Remove session when logged out
+        console.log('Removing session from AsyncStorage');
         await AsyncStorage.removeItem(SESSION_KEY);
         trackAuthEvent('logout');
       }
@@ -54,25 +58,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadSavedSession = async () => {
     try {
-      // Check for saved session
+      console.log('Loading saved session...');
+      
+      // On web, always try to get the current session from Supabase first
+      if (Platform.OS === 'web') {
+        console.log('Web platform detected, checking current session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session on web:', error);
+        } else if (session) {
+          console.log('Found valid session on web:', session.user.id);
+          setSession(session);
+          setUser(session.user);
+          trackAuthEvent('login', undefined, session.user.id);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Check for saved session in AsyncStorage
       const savedSession = await AsyncStorage.getItem(SESSION_KEY);
       if (savedSession) {
+        console.log('Found saved session in AsyncStorage');
         const parsedSession = JSON.parse(savedSession);
         
         // Verify the session is still valid
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error || !session) {
+          console.log('Saved session is invalid, removing it');
           // Session is invalid, remove it
           await AsyncStorage.removeItem(SESSION_KEY);
           setSession(null);
           setUser(null);
         } else {
+          console.log('Saved session is valid');
           // Session is valid
           setSession(session);
           setUser(session.user);
           trackAuthEvent('login', undefined, session.user.id);
         }
+      } else {
+        console.log('No saved session found');
       }
     } catch (error) {
       console.error('Error loading saved session:', error);
@@ -190,12 +218,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    
-    // Clear saved session
-    await AsyncStorage.removeItem(SESSION_KEY);
-    trackAuthEvent('logout');
+    try {
+      console.log('Starting sign out process...');
+      
+      // On web, we need to handle sign out differently
+      if (Platform.OS === 'web') {
+        console.log('Signing out on web platform');
+        // For web, we might need to clear any stored tokens first
+        await AsyncStorage.removeItem(SESSION_KEY);
+      }
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Supabase sign out error:', error);
+        throw error;
+      }
+      
+      console.log('Sign out successful');
+      
+      // Clear saved session
+      await AsyncStorage.removeItem(SESSION_KEY);
+      trackAuthEvent('logout');
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      // Even if Supabase sign out fails, clear local session
+      await AsyncStorage.removeItem(SESSION_KEY);
+      throw error;
+    }
   };
 
   return (

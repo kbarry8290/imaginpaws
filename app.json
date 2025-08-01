@@ -15,7 +15,11 @@
       }
     },
     "android": {
-      "package": "com.imaginpaws.app"
+      "package": "com.imaginpaws.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/appicon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
       "bundler": "metro",

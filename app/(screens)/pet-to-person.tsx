@@ -127,7 +127,7 @@ export default function PetToPersonScreen() {
             // Prepare payload with only defined, required fields
             const payload: Record<string, any> = {
               user_id: user.id,
-              original_photo: petPhoto,
+              original_photo: result.original_photo,
               result_photo: resultPhoto,
               transformation_type: 'pet-to-person',
               style: transformSettings.style,
@@ -164,7 +164,7 @@ export default function PetToPersonScreen() {
         router.push({
           pathname: '/results',
           params: {
-            originalPhoto: petPhoto,
+            originalPhoto: result.original_photo,
             resultPhoto: resultPhoto,
             settings: JSON.stringify(transformSettings)
           }

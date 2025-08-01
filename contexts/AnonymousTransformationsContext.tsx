@@ -37,18 +37,23 @@ export function AnonymousTransformationsProvider({ children }: { children: React
 
   // When user signs in, migrate anonymous transformations
   useEffect(() => {
-    if (user && transformations.length > 0) {
+    if (user) {
+      // Always try to migrate when user signs in, even if transformations aren't loaded yet
       migrateTransformations();
     }
-  }, [user, transformations]);
+  }, [user]);
 
   const loadTransformations = async () => {
     try {
+      console.log('Loading anonymous transformations from AsyncStorage');
       const saved = await AsyncStorage.getItem(ANONYMOUS_TRANSFORMS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as AnonymousTransformation[];
+        console.log('Loaded', parsed.length, 'anonymous transformations');
         setTransformations(parsed);
         setTransformationsUsed(parsed.length);
+      } else {
+        console.log('No saved anonymous transformations found');
       }
     } catch (error) {
       console.error('Error loading transformations:', error);
@@ -59,18 +64,65 @@ export function AnonymousTransformationsProvider({ children }: { children: React
     if (!user) return;
 
     try {
+      console.log('Starting migration of anonymous transformations for user:', user.id);
+      
+      // Load transformations directly from AsyncStorage to avoid race conditions
+      const saved = await AsyncStorage.getItem(ANONYMOUS_TRANSFORMS_KEY);
+      if (!saved) {
+        console.log('No anonymous transformations found to migrate');
+        return;
+      }
+
+      const transformationsToMigrate = JSON.parse(saved) as AnonymousTransformation[];
+      console.log('Found', transformationsToMigrate.length, 'transformations to migrate');
+
+      if (transformationsToMigrate.length === 0) {
+        console.log('No transformations to migrate');
+        return;
+      }
+
       // Insert each transformation into the user's gallery
-      for (const transform of transformations) {
-        await supabase
+      for (const transform of transformationsToMigrate) {
+        console.log('Migrating transformation:', transform);
+        
+        // Check if this transformation already exists to avoid duplicates
+        const { data: existing } = await supabase
+          .from('transformations')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('original_photo', transform.originalPhoto)
+          .eq('result_photo', transform.resultPhoto)
+          .limit(1);
+        
+        if (existing && existing.length > 0) {
+          console.log('Transformation already exists, skipping:', existing[0].id);
+          continue;
+        }
+        
+        const { error } = await supabase
           .from('transformations')
           .insert({
             user_id: user.id,
             original_photo: transform.originalPhoto,
             result_photo: transform.resultPhoto,
-            ...transform.settings,
+            style: transform.settings.style || '',
+            sex: transform.settings.gender || '', // Map gender to sex
+            personality: transform.settings.personality || '',
+            clothing: transform.settings.clothing || '',
+            background: transform.settings.background || '',
+            age: transform.settings.age || '',
           });
+        
+        if (error) {
+          console.error('Error inserting transformation:', error);
+          console.error('Error details:', error.details);
+          console.error('Error hint:', error.hint);
+          throw error;
+        }
       }
 
+      console.log('Successfully migrated', transformationsToMigrate.length, 'transformations');
+      
       // Clear anonymous transformations after successful migration
       await resetTransformations();
     } catch (error) {
@@ -86,6 +138,8 @@ export function AnonymousTransformationsProvider({ children }: { children: React
       timestamp: Date.now(),
     };
 
+    console.log('Recording anonymous transformation:', newTransformation);
+
     const updatedTransformations = [...transformations, newTransformation];
     
     try {
@@ -95,6 +149,7 @@ export function AnonymousTransformationsProvider({ children }: { children: React
       );
       setTransformations(updatedTransformations);
       setTransformationsUsed(prev => prev + 1);
+      console.log('Successfully saved anonymous transformation to AsyncStorage');
     } catch (error) {
       console.error('Error saving transformation:', error);
     }

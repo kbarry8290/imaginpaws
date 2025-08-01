@@ -6,7 +6,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "ImaginPaws",
   scheme: "imaginpaws",
   version: "1.0.0",
-  icon: "./assets/images/appicon.png",
+  icon: "./assets/images/appicon2.png",
   extra: {
     ...config.extra, // ← Keep any existing values!
     EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
@@ -24,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: "com.imaginpaws.app",
     adaptiveIcon: {
-      foregroundImage: "./assets/images/appicon.png",
+      foregroundImage: "./assets/images/appicon2.png",
       backgroundColor: "#ffffff"
     }
   },

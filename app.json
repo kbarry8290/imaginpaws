@@ -4,7 +4,7 @@
     "slug": "imaginpaws",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/appicon.png",
+    "icon": "./assets/images/appicon2.png",
     "scheme": "imaginpaws",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -17,7 +17,7 @@
     "android": {
       "package": "com.imaginpaws.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/appicon.png",
+        "foregroundImage": "./assets/images/appicon2.png",
         "backgroundColor": "#ffffff"
       }
     },

@@ -42,9 +42,18 @@ function useProtectedRoute(user: any) {
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
     
+    console.log('Protected route check:', { 
+      user: !!user, 
+      inAuthGroup, 
+      inOnboardingGroup, 
+      segments: segments.join('/') 
+    });
+    
     if (!user && !inAuthGroup && !inOnboardingGroup) {
+      console.log('Redirecting to welcome screen');
       router.replace('/welcome');
     } else if (user && (inAuthGroup || inOnboardingGroup)) {
+      console.log('Redirecting authenticated user to transform');
       router.replace('/(tabs)/transform' as any);
     }
   }, [user, segments]);

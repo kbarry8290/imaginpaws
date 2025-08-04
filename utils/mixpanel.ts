@@ -18,11 +18,26 @@ if (Platform.OS === 'web') {
 }
 
 let mixpanel: Mixpanel | null = null;
+let isInitialized = false;
+let isInitializing = false;
+let eventQueue: Array<{ eventName: string; props?: Record<string, any> }> = [];
 
 const MIXPANEL_TOKEN = '43d70383b99e76a948dab1182ecc4b08';
 
 export const initMixpanel = async () => {
   try {
+    // Prevent multiple simultaneous initializations
+    if (isInitializing) {
+      console.log('🔍 [Mixpanel] Already initializing, waiting...');
+      return;
+    }
+    
+    if (isInitialized) {
+      console.log('🔍 [Mixpanel] Already initialized');
+      return;
+    }
+    
+    isInitializing = true;
     console.log('🔍 [Mixpanel] Initializing for platform:', Platform.OS);
     
     // Web platform
@@ -34,9 +49,11 @@ export const initMixpanel = async () => {
           persistence: 'localStorage'
         });
         console.log('✅ [Mixpanel] Web initialized successfully');
+        isInitialized = true;
       } else {
         console.log('❌ [Mixpanel] Web SDK not available');
       }
+      isInitializing = false;
       return;
     }
 
@@ -50,13 +67,36 @@ export const initMixpanel = async () => {
       }
       
       console.log('✅ [Mixpanel] Native initialized successfully');
+      isInitialized = true;
+      
+      // Process any queued events
+      processEventQueue();
     }
   } catch (error) {
     console.error('❌ [Mixpanel] Failed to initialize:', error);
+    isInitialized = false;
+  } finally {
+    isInitializing = false;
   }
 };
 
-export const trackEvent = (eventName: string, props?: Record<string, any>) => {
+const processEventQueue = () => {
+  if (!isInitialized) {
+    console.log('🔍 [Mixpanel] Not initialized, skipping queue processing');
+    return;
+  }
+  
+  console.log(`🔍 [Mixpanel] Processing ${eventQueue.length} queued events`);
+  
+  while (eventQueue.length > 0) {
+    const queuedEvent = eventQueue.shift();
+    if (queuedEvent) {
+      trackEventInternal(queuedEvent.eventName, queuedEvent.props);
+    }
+  }
+};
+
+const trackEventInternal = (eventName: string, props?: Record<string, any>) => {
   try {
     // Add common properties to all events
     const eventProps = {
@@ -83,8 +123,43 @@ export const trackEvent = (eventName: string, props?: Record<string, any>) => {
   }
 };
 
+export const trackEvent = (eventName: string, props?: Record<string, any>) => {
+  try {
+    // If not initialized and not initializing, queue the event
+    if (!isInitialized && !isInitializing) {
+      console.log('🔍 [Mixpanel] Not initialized, queuing event:', eventName);
+      eventQueue.push({ eventName, props });
+      return;
+    }
+    
+    // If still initializing, queue the event
+    if (isInitializing) {
+      console.log('🔍 [Mixpanel] Still initializing, queuing event:', eventName);
+      eventQueue.push({ eventName, props });
+      return;
+    }
+    
+    // If initialized, track immediately
+    if (isInitialized) {
+      trackEventInternal(eventName, props);
+    } else {
+      // Fallback: queue the event
+      console.log('🔍 [Mixpanel] Fallback: queuing event:', eventName);
+      eventQueue.push({ eventName, props });
+    }
+  } catch (error) {
+    console.error('❌ [Mixpanel] Failed to track event:', eventName, error);
+  }
+};
+
 export const identifyUser = (userId: string, userProperties?: Record<string, any>) => {
   try {
+    // If not initialized, skip user identification
+    if (!isInitialized) {
+      console.log('🔍 [Mixpanel] Not initialized, skipping user identification:', userId);
+      return;
+    }
+    
     if (Platform.OS === 'web') {
       if (mixpanelWeb) {
         mixpanelWeb.identify(userId);
@@ -114,6 +189,12 @@ export const identifyUser = (userId: string, userProperties?: Record<string, any
 
 export const resetUser = () => {
   try {
+    // If not initialized, skip user reset
+    if (!isInitialized) {
+      console.log('🔍 [Mixpanel] Not initialized, skipping user reset');
+      return;
+    }
+    
     if (Platform.OS === 'web') {
       if (mixpanelWeb) {
         mixpanelWeb.reset();
@@ -171,6 +252,12 @@ export const trackUserInteraction = (action: string, element: string, details?: 
 // Timing event functions
 export const startTimingEvent = (eventName: string) => {
   try {
+    // If not initialized, skip timing
+    if (!isInitialized) {
+      console.log('🔍 [Mixpanel] Not initialized, skipping timing start:', eventName);
+      return;
+    }
+    
     if (Platform.OS === 'web') {
       if (mixpanelWeb) {
         mixpanelWeb.timeEvent(eventName);
@@ -191,24 +278,42 @@ export const startTimingEvent = (eventName: string) => {
 
 export const trackTimingEvent = (eventName: string, additionalProps?: Record<string, any>) => {
   try {
-    const eventProps = {
-      platform: Platform.OS,
-      timestamp: new Date().toISOString(),
-      ...additionalProps,
-    };
+    // Use the same queuing logic as trackEvent
+    if (!isInitialized && !isInitializing) {
+      console.log('🔍 [Mixpanel] Not initialized, queuing timing event:', eventName);
+      eventQueue.push({ eventName, props: additionalProps });
+      return;
+    }
+    
+    if (isInitializing) {
+      console.log('🔍 [Mixpanel] Still initializing, queuing timing event:', eventName);
+      eventQueue.push({ eventName, props: additionalProps });
+      return;
+    }
+    
+    if (isInitialized) {
+      const eventProps = {
+        platform: Platform.OS,
+        timestamp: new Date().toISOString(),
+        ...additionalProps,
+      };
 
-    if (Platform.OS === 'web') {
-      if (mixpanelWeb) {
-        mixpanelWeb.track(eventName, eventProps);
-        console.log('✅ [Mixpanel] Web timing event tracked:', eventName);
+      if (Platform.OS === 'web') {
+        if (mixpanelWeb) {
+          mixpanelWeb.track(eventName, eventProps);
+          console.log('✅ [Mixpanel] Web timing event tracked:', eventName);
+        } else {
+          console.log('❌ [Mixpanel] Web timing event (not tracked):', eventName);
+        }
+      } else if (mixpanel) {
+        mixpanel.track(eventName, eventProps);
+        console.log('✅ [Mixpanel] Native timing event tracked:', eventName);
       } else {
-        console.log('❌ [Mixpanel] Web timing event (not tracked):', eventName);
+        console.log('❌ [Mixpanel] Timing event (not tracked):', eventName);
       }
-    } else if (mixpanel) {
-      mixpanel.track(eventName, eventProps);
-      console.log('✅ [Mixpanel] Native timing event tracked:', eventName);
     } else {
-      console.log('❌ [Mixpanel] Timing event (not tracked):', eventName);
+      console.log('🔍 [Mixpanel] Fallback: queuing timing event:', eventName);
+      eventQueue.push({ eventName, props: additionalProps });
     }
   } catch (error) {
     console.error('❌ [Mixpanel] Failed to track timing event:', error);

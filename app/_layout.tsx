@@ -41,13 +41,21 @@ function useProtectedRoute(user: any) {
   useEffect(() => {
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
+    const isResetPasswordRoute = segments.some(segment => segment === 'reset-password');
     
     console.log('Protected route check:', { 
       user: !!user, 
       inAuthGroup, 
       inOnboardingGroup, 
+      isResetPasswordRoute,
       segments: segments.join('/') 
     });
+    
+    // Special case: Allow unauthenticated access to reset-password route
+    if (!user && isResetPasswordRoute) {
+      console.log('🔓 Allowing unauthenticated access to reset-password route');
+      return;
+    }
     
     if (!user && !inAuthGroup && !inOnboardingGroup) {
       console.log('Redirecting to welcome screen');

@@ -24,7 +24,10 @@ export default function ResetPasswordScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  console.log('ResetPasswordScreen loaded with params:', params);
+  console.log('🧪 Reset password screen loaded');
+  console.log('Token:', params.token);
+  console.log('Type:', params.type);
+  console.log('All params:', params);
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

@@ -6,12 +6,18 @@
     "orientation": "portrait",
     "icon": "./assets/images/appicon2.png",
     "scheme": "imaginpaws",
+    "deepLinking": true,
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.imaginpaws.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["imaginpaws"]
+          }
+        ]
       }
     },
     "android": {
@@ -19,7 +25,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/appicon2.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "imaginpaws",
+            "host": "*"
+          },
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",

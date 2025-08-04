@@ -16,7 +16,7 @@ import { CreditsProvider } from '@/contexts/CreditsContext';
 import { AnonymousTransformationsProvider } from '@/contexts/AnonymousTransformationsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { logAppStartup, logScreenView } from '@/utils/logging';
-import { initMixpanel } from '@/utils/mixpanel';
+import { initMixpanel, trackEvent } from '@/utils/mixpanel';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
@@ -104,6 +104,8 @@ export default function RootLayout() {
     logAppStartup();
     initMixpanel().then(() => {
       console.log('✅ [Mixpanel] Initialization completed');
+      // Debug: Track app started event to verify Mixpanel is working
+      trackEvent('App Started');
     });
   }, []);
 

@@ -76,6 +76,7 @@ export default function TransformingScreen() {
           gender: settings.gender,
           style: settings.style,
           clothing: settings.clothing,
+          background: settings.background,
         });
 
         clearTimeout(timeoutId);

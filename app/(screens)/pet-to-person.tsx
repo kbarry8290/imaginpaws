@@ -105,6 +105,7 @@ export default function PetToPersonScreen() {
           gender: transformSettings.gender,
           style: transformSettings.style,
           clothing: transformSettings.clothing,
+          background: transformSettings.background,
         });
 
         clearTimeout(timeoutId);

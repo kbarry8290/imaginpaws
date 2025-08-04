@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 import ResultCard from '@/components/ResultCard';
 import { TransformSettings } from '@/components/TransformOptions';
 import { useColorScheme } from 'react-native';
-import { History, Wand as Wand2, ArrowLeft } from 'lucide-react-native';
+import { History, Wand as Wand2 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCredits } from '@/contexts/CreditsContext';
 
@@ -47,9 +47,6 @@ export default function ResultsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}> 
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: Layout.spacing.l }} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={colors.text} />
-        </TouchableOpacity>
         <View style={{ marginBottom: Layout.spacing.l }}>
           <Text style={[styles.title, { color: colors.text }]}>🎉 All done! Meet your masterpiece.</Text>
         </View>
@@ -122,9 +119,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: Layout.spacing.l,
   },
-  backButton: {
-    marginBottom: Layout.spacing.l,
-    alignSelf: 'flex-start',
-    padding: 8,
-  },
+
 }); 

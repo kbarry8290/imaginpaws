@@ -17,7 +17,7 @@ if (Platform.OS === 'web') {
   }
 }
 
-let mixpanel: Mixpanel | null = null;
+let mixpanel: any = null;
 let isInitialized = false;
 let isInitializing = false;
 let eventQueue: Array<{ eventName: string; props?: Record<string, any> }> = [];
@@ -59,7 +59,8 @@ export const initMixpanel = async () => {
 
     // Native platforms
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      mixpanel = await Mixpanel.init(MIXPANEL_TOKEN, true);
+      mixpanel = new Mixpanel(MIXPANEL_TOKEN, true);
+      await mixpanel.init();
       
       // Enable logging in development
       if (__DEV__) {

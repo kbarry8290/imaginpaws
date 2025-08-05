@@ -52,19 +52,41 @@ export const initMixpanel = async () => {
 
     // Native platforms
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      mixpanel = new Mixpanel(MIXPANEL_TOKEN, true);
-      await mixpanel.init();
-      
-      // Enable logging in development
-      if (__DEV__) {
-        mixpanel.setLoggingEnabled(true);
+      try {
+        console.log('🔍 [Mixpanel] Creating Mixpanel instance...');
+        mixpanel = new Mixpanel(MIXPANEL_TOKEN, true);
+        
+        console.log('🔍 [Mixpanel] Initializing Mixpanel...');
+        await mixpanel.init();
+        
+        // Enable logging in development
+        if (__DEV__) {
+          console.log('🔍 [Mixpanel] Enabling debug logging...');
+          mixpanel.setLoggingEnabled(true);
+        }
+        
+        console.log('✅ [Mixpanel] Native initialized successfully');
+        isInitialized = true;
+        
+        // Send a test event to verify everything is working
+        try {
+          console.log('🧪 [Mixpanel] Sending test event...');
+          mixpanel.track('Test Event', { 
+            platform: Platform.OS,
+            timestamp: new Date().toISOString(),
+            test: true 
+          });
+          console.log('✅ [Mixpanel] Test event sent successfully');
+        } catch (testError) {
+          console.error('❌ [Mixpanel] Test event failed:', testError);
+        }
+        
+        // Process any queued events
+        processEventQueue();
+      } catch (initError) {
+        console.error('❌ [Mixpanel] Native initialization failed:', initError);
+        throw initError;
       }
-      
-      console.log('✅ [Mixpanel] Native initialized successfully');
-      isInitialized = true;
-      
-      // Process any queued events
-      processEventQueue();
     }
   } catch (error) {
     console.error('❌ [Mixpanel] Failed to initialize:', error);
@@ -103,13 +125,15 @@ const trackEventInternal = (eventName: string, props?: Record<string, any>) => {
       // For web, just log to console for now
       console.log('📊 [Mixpanel Web] Event:', eventName, eventProps);
     } else if (mixpanel) {
+      console.log('🔍 [Mixpanel] Tracking event:', eventName, eventProps);
       mixpanel.track(eventName, eventProps);
-      console.log('✅ [Mixpanel] Native event tracked:', eventName);
+      console.log('✅ [Mixpanel] Native event tracked successfully:', eventName);
     } else {
       console.log('❌ [Mixpanel] Event not tracked (SDK not available):', eventName);
     }
   } catch (error) {
     console.error('❌ [Mixpanel] Failed to track event:', eventName, error);
+    console.error('❌ [Mixpanel] Error details:', error);
   }
 };
 
@@ -152,6 +176,26 @@ export const ensureMixpanelInitialized = async () => {
     while (isInitializing) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+  }
+};
+
+// Function to check and log the distinct ID
+export const checkDistinctId = () => {
+  if (Platform.OS === 'web') {
+    console.log('🔍 [Mixpanel] Web platform - distinct ID check not available');
+    return;
+  }
+  
+  if (mixpanel && isInitialized) {
+    try {
+      const distinctId = mixpanel.getDistinctId();
+      console.log('🔍 [Mixpanel] Current distinct ID:', distinctId);
+      return distinctId;
+    } catch (error) {
+      console.error('❌ [Mixpanel] Failed to get distinct ID:', error);
+    }
+  } else {
+    console.log('🔍 [Mixpanel] Mixpanel not initialized, cannot check distinct ID');
   }
 };
 

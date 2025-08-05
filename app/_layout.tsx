@@ -16,7 +16,7 @@ import { CreditsProvider } from '@/contexts/CreditsContext';
 import { AnonymousTransformationsProvider } from '@/contexts/AnonymousTransformationsContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { logAppStartup, logScreenView } from '@/utils/logging';
-import { initMixpanel, trackEvent } from '@/utils/mixpanel';
+import { initMixpanel, trackEvent, checkDistinctId } from '@/utils/mixpanel';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
@@ -113,10 +113,21 @@ export default function RootLayout() {
     
     const initializeMixpanel = async () => {
       try {
+        console.log('🔍 [Mixpanel] Starting initialization...');
         await initMixpanel();
         console.log('✅ [Mixpanel] Initialization completed');
+        
+        // Check distinct ID after initialization
+        checkDistinctId();
+        
         // Debug: Track app started event to verify Mixpanel is working
-        trackEvent('App Started');
+        console.log('🔍 [Mixpanel] Sending App Started event...');
+        trackEvent('App Started', { 
+          appVersion: '1.0.0',
+          buildNumber: '1',
+          initializationTime: new Date().toISOString()
+        });
+        console.log('✅ [Mixpanel] App Started event sent');
       } catch (error) {
         console.error('❌ [Mixpanel] Failed to initialize:', error);
       }

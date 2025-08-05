@@ -9,7 +9,7 @@ import {
   Nunito_800ExtraBold
 } from '@expo-google-fonts/nunito';
 import { SplashScreen } from 'expo-router';
-import { Platform, View, Text } from 'react-native';
+import { Platform, View, Text, useColorScheme } from 'react-native';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { PurchasesProvider } from '@/contexts/PurchasesContext';
 import { CreditsProvider } from '@/contexts/CreditsContext';
@@ -125,6 +125,7 @@ export default function RootLayout() {
   console.log('RootLayout function invoked');
 
   useFrameworkReady();
+  const colorScheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
     'Nunito-Regular': Nunito_400Regular,
@@ -182,7 +183,7 @@ export default function RootLayout() {
             <CreditsProvider>
               <PurchasesProvider>
                 <RootLayoutNav />
-                <StatusBar style={Platform.OS === 'ios' ? 'dark' : 'auto'} />
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
               </PurchasesProvider>
             </CreditsProvider>
           </AnonymousTransformationsProvider>

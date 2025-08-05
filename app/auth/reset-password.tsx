@@ -54,7 +54,7 @@ export default function ResetPasswordScreen() {
           </Text>
           <Button
             title="Back to Login"
-            onPress={() => router.replace('/(auth)/login' as any)}
+            onPress={() => router.replace('/auth/login' as any)}
             style={styles.button}
           />
         </View>
@@ -136,7 +136,7 @@ export default function ResetPasswordScreen() {
   };
 
   const handleBackToLogin = () => {
-    router.replace('/(auth)/login' as any);
+    router.replace('/auth/login' as any);
   };
 
   if (validatingToken) {

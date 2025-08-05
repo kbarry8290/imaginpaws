@@ -44,7 +44,7 @@ function useProtectedRoute(user: any) {
     const isResetPasswordRoute = segments.some(segment => segment === 'reset-password');
     
     // Define public routes that don't require authentication
-    const publicRoutes = ['welcome', 'login', 'signup', 'reset-password'];
+    const publicRoutes = ['welcome', 'login', 'signup', 'auth/reset-password', 'reset-password'];
     const currentPath = segments.join('/');
     const isPublicRoute = publicRoutes.some(route => currentPath.includes(route));
     

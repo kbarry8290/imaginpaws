@@ -110,11 +110,19 @@ export default function RootLayout() {
 
   useEffect(() => {
     logAppStartup();
-    initMixpanel().then(() => {
-      console.log('✅ [Mixpanel] Initialization completed');
-      // Debug: Track app started event to verify Mixpanel is working
-      trackEvent('App Started');
-    });
+    
+    const initializeMixpanel = async () => {
+      try {
+        await initMixpanel();
+        console.log('✅ [Mixpanel] Initialization completed');
+        // Debug: Track app started event to verify Mixpanel is working
+        trackEvent('App Started');
+      } catch (error) {
+        console.error('❌ [Mixpanel] Failed to initialize:', error);
+      }
+    };
+    
+    initializeMixpanel();
   }, []);
 
   useEffect(() => {

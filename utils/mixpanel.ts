@@ -1,21 +1,16 @@
 import { Mixpanel } from 'mixpanel-react-native';
 import { Platform } from 'react-native';
 
-// Web SDK import
+// Web SDK import - disabled for now due to compatibility issues
 let mixpanelWeb: any = null;
-if (Platform.OS === 'web') {
-  try {
-    mixpanelWeb = require('mixpanel-browser');
-    // Validate that the SDK is properly loaded
-    if (!mixpanelWeb || typeof mixpanelWeb.init !== 'function') {
-      console.warn('Mixpanel web SDK not properly loaded');
-      mixpanelWeb = null;
-    }
-  } catch (error) {
-    console.warn('Failed to load Mixpanel web SDK:', error);
-    mixpanelWeb = null;
+
+const loadMixpanelWeb = () => {
+  if (Platform.OS === 'web') {
+    console.log('🔍 [Mixpanel] Web SDK disabled - using console logging only');
+    // For now, we'll just log events to console on web
+    // TODO: Implement proper web tracking when SDK compatibility is resolved
   }
-}
+};
 
 let mixpanel: any = null;
 let isInitialized = false;
@@ -42,17 +37,15 @@ export const initMixpanel = async () => {
     
     // Web platform
     if (Platform.OS === 'web') {
-      if (mixpanelWeb) {
-        mixpanelWeb.init(MIXPANEL_TOKEN, {
-          debug: __DEV__,
-          track_pageview: true,
-          persistence: 'localStorage'
-        });
-        console.log('✅ [Mixpanel] Web initialized successfully');
-        isInitialized = true;
-      } else {
-        console.log('❌ [Mixpanel] Web SDK not available');
-      }
+      // Load the web SDK first
+      loadMixpanelWeb();
+      
+      // For now, just mark as initialized and log to console
+      console.log('✅ [Mixpanel] Web initialized (console logging only)');
+      isInitialized = true;
+      
+      // Process any queued events
+      processEventQueue();
       isInitializing = false;
       return;
     }
@@ -107,12 +100,8 @@ const trackEventInternal = (eventName: string, props?: Record<string, any>) => {
     };
 
     if (Platform.OS === 'web') {
-      if (mixpanelWeb) {
-        mixpanelWeb.track(eventName, eventProps);
-        console.log('✅ [Mixpanel] Web event tracked:', eventName);
-      } else {
-        console.log('❌ [Mixpanel] Web event not tracked (SDK not available):', eventName);
-      }
+      // For web, just log to console for now
+      console.log('📊 [Mixpanel Web] Event:', eventName, eventProps);
     } else if (mixpanel) {
       mixpanel.track(eventName, eventProps);
       console.log('✅ [Mixpanel] Native event tracked:', eventName);
@@ -150,6 +139,19 @@ export const trackEvent = (eventName: string, props?: Record<string, any>) => {
     }
   } catch (error) {
     console.error('❌ [Mixpanel] Failed to track event:', eventName, error);
+  }
+};
+
+// Add a function to ensure Mixpanel is initialized before tracking
+export const ensureMixpanelInitialized = async () => {
+  if (!isInitialized && !isInitializing) {
+    console.log('🔍 [Mixpanel] Ensuring initialization before tracking');
+    await initMixpanel();
+  } else if (isInitializing) {
+    // Wait for initialization to complete
+    while (isInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
   }
 };
 

@@ -43,24 +43,48 @@ function useProtectedRoute(user: any) {
     const inOnboardingGroup = segments[0] === '(onboarding)';
     const isResetPasswordRoute = segments.some(segment => segment === 'reset-password');
     
+    // Define public routes that don't require authentication
+    const publicRoutes = ['welcome', 'login', 'signup', 'reset-password'];
+    const currentPath = segments.join('/');
+    const isPublicRoute = publicRoutes.some(route => currentPath.includes(route));
+    
     console.log('Protected route check:', { 
       user: !!user, 
       inAuthGroup, 
       inOnboardingGroup, 
       isResetPasswordRoute,
-      segments: segments.join('/') 
+      isPublicRoute,
+      segments: segments.join('/'),
+      currentPath
     });
     
-    // Special case: Allow unauthenticated access to reset-password route
-    if (!user && isResetPasswordRoute) {
-      console.log('🔓 Allowing unauthenticated access to reset-password route');
+    // Allow access to public routes without authentication
+    if (!user && isPublicRoute) {
+      console.log('🔓 Allowing unauthenticated access to public route:', currentPath);
       return;
     }
     
-    if (!user && !inAuthGroup && !inOnboardingGroup) {
-      console.log('Redirecting to welcome screen');
+    // Allow access to auth group routes (including reset-password) without authentication
+    if (!user && inAuthGroup) {
+      console.log('🔓 Allowing unauthenticated access to auth group route');
+      return;
+    }
+    
+    // Allow access to onboarding group routes without authentication
+    if (!user && inOnboardingGroup) {
+      console.log('🔓 Allowing unauthenticated access to onboarding group route');
+      return;
+    }
+    
+    // Redirect unauthenticated users to welcome screen
+    if (!user) {
+      console.log('Redirecting unauthenticated user to welcome screen');
       router.replace('/welcome');
-    } else if (user && (inAuthGroup || inOnboardingGroup)) {
+      return;
+    }
+    
+    // Redirect authenticated users away from auth/onboarding screens
+    if (user && (inAuthGroup || inOnboardingGroup)) {
       console.log('Redirecting authenticated user to transform');
       router.replace('/(tabs)/transform' as any);
     }

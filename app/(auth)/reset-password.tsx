@@ -24,9 +24,13 @@ export default function ResetPasswordScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
+  // Extract token and type from URL parameters
+  const token = params.token as string;
+  const type = params.type as string;
+  
   console.log('🧪 Reset password screen loaded');
-  console.log('Token:', params.token);
-  console.log('Type:', params.type);
+  console.log('Token:', token);
+  console.log('Type:', type);
   console.log('All params:', params);
   
   const [password, setPassword] = useState('');
@@ -36,11 +40,30 @@ export default function ResetPasswordScreen() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Early validation - show error immediately if invalid parameters
+  if (!token || type !== 'recovery') {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.errorContainer}>
+          <AlertCircle size={48} color={colors.error} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>
+            Invalid Reset Link
+          </Text>
+          <Text style={[styles.errorText, { color: colors.placeholderText }]}>
+            This password reset link is invalid or has expired. Please request a new password reset.
+          </Text>
+          <Button
+            title="Back to Login"
+            onPress={() => router.replace('/(auth)/login' as any)}
+            style={styles.button}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   useEffect(() => {
     const validateResetToken = async () => {
-      const token = params.token as string;
-      const type = params.type as string;
-
       // Check if we have the necessary parameters from the deep link
       if (type !== 'recovery' || !token) {
         setError('Invalid reset link. Please request a new password reset.');
@@ -303,6 +326,12 @@ const styles = StyleSheet.create({
     marginTop: Layout.spacing.s,
   },
   errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Layout.spacing.l,
+  },
+  errorCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: Layout.spacing.m,

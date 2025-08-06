@@ -32,7 +32,7 @@ type Transformation = {
   style: string;
   sex: string;
   personality: string;
-  clothing: string;
+  outfit: string; // Changed from clothing to outfit to match database
   background: string;
   age: string;
   created_at: string;
@@ -88,7 +88,7 @@ export default function GalleryScreen() {
       style: transformation.style,
       gender: transformation.sex,
       personality: transformation.personality,
-      clothing: transformation.clothing,
+      clothing: transformation.outfit, // Map outfit back to clothing for TransformSettings
       background: transformation.background,
       age: transformation.age,
     };

@@ -167,7 +167,7 @@ export function AnonymousTransformationsProvider({ children }: { children: React
           style: transform.settings.style || '',
           sex: transform.settings.gender || '',
           personality: transform.settings.personality || '',
-          clothing: transform.settings.clothing || '',
+          outfit: transform.settings.clothing || '',
           background: transform.settings.background || '',
           age: transform.settings.age || 'adult',
         });
@@ -181,7 +181,7 @@ export function AnonymousTransformationsProvider({ children }: { children: React
             style: transform.settings.style || '',
             sex: transform.settings.gender || '', // Map gender to sex
             personality: transform.settings.personality || '',
-            clothing: transform.settings.clothing || '',
+            outfit: transform.settings.clothing || '', // Map clothing to outfit
             background: transform.settings.background || '',
             age: transform.settings.age || 'adult', // Default to adult if not specified
           });

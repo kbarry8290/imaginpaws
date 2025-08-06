@@ -113,10 +113,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: 'imaginpaws://auth/callback',
+      },
     });
 
     if (error) throw error;
-    if (data.session) {
+    
+    // If no session is created (email confirmation required), sign in immediately
+    if (!data.session) {
+      console.log('No session created during signup, attempting immediate sign in...');
+      const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (signInError) {
+        console.error('Failed to sign in after signup:', signInError);
+        throw new Error('Account created but unable to sign in automatically. Please check your email for confirmation or try signing in manually.');
+      }
+      
+      if (signInData.session) {
+        trackAuthEvent('signup', undefined, signInData.session.user.id);
+      }
+    } else {
       trackAuthEvent('signup', undefined, data.session.user.id);
     }
   };

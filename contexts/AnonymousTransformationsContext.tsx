@@ -38,8 +38,33 @@ export function AnonymousTransformationsProvider({ children }: { children: React
   // When user signs in, migrate anonymous transformations
   useEffect(() => {
     if (user) {
-      // Always try to migrate when user signs in, even if transformations aren't loaded yet
-      migrateTransformations();
+      const attemptMigration = async () => {
+        // First try to migrate with current state
+        if (transformations.length > 0) {
+          await migrateTransformations();
+          return;
+        }
+        
+        // If no transformations in state, try loading from AsyncStorage directly
+        try {
+          const saved = await AsyncStorage.getItem(ANONYMOUS_TRANSFORMS_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved) as AnonymousTransformation[];
+            if (parsed.length > 0) {
+              console.log('Found transformations in AsyncStorage, migrating directly');
+              await migrateTransformations();
+            }
+          }
+        } catch (error) {
+          console.error('Error checking AsyncStorage for migration:', error);
+        }
+      };
+      
+      // Add a small delay to ensure auth state is stable
+      setTimeout(attemptMigration, 500);
+      
+      // Also try again after a longer delay as a fallback
+      setTimeout(attemptMigration, 3000);
     }
   }, [user]);
 
@@ -81,6 +106,9 @@ export function AnonymousTransformationsProvider({ children }: { children: React
         return;
       }
 
+      // Add a small delay to ensure the user session is fully established
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Insert each transformation into the user's gallery
       for (const transform of transformationsToMigrate) {
         console.log('Migrating transformation:', transform);
@@ -110,14 +138,17 @@ export function AnonymousTransformationsProvider({ children }: { children: React
             personality: transform.settings.personality || '',
             clothing: transform.settings.clothing || '',
             background: transform.settings.background || '',
-            age: transform.settings.age || '',
+            age: transform.settings.age || 'adult', // Default to adult if not specified
           });
         
         if (error) {
           console.error('Error inserting transformation:', error);
           console.error('Error details:', error.details);
           console.error('Error hint:', error.hint);
-          throw error;
+          
+          // Don't throw error immediately, log it and continue with other transformations
+          console.error('Failed to migrate transformation, continuing with others...');
+          continue;
         }
       }
 
@@ -125,6 +156,19 @@ export function AnonymousTransformationsProvider({ children }: { children: React
       
       // Clear anonymous transformations after successful migration
       await resetTransformations();
+      
+      // Verify the transformations were saved by fetching them
+      const { data: savedTransformations, error: fetchError } = await supabase
+        .from('transformations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) {
+        console.error('Error verifying saved transformations:', fetchError);
+      } else {
+        console.log('Verified saved transformations:', savedTransformations?.length || 0, 'found');
+      }
     } catch (error) {
       console.error('Error migrating transformations:', error);
     }

@@ -23,7 +23,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCredits } from '@/contexts/CreditsContext';
 import Button from '@/components/ui/Button';
 import { TransformSettings } from '@/components/TransformOptions';
-import DebugMigration from '@/components/DebugMigration';
 
 type Transformation = {
   id: string;
@@ -231,9 +230,6 @@ export default function GalleryScreen() {
             />
           }
         >
-          {/* Debug component - remove after testing */}
-          <DebugMigration />
-          
           {transformations.length > 0 ? renderTransformationList() : renderEmptyState()}
         </ScrollView>
       )}

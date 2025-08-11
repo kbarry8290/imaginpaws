@@ -17,9 +17,11 @@ import { AnonymousTransformationsProvider } from '@/contexts/AnonymousTransforma
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { logAppStartup, logScreenView } from '@/utils/logging';
 import { initMixpanel, trackEvent, checkDistinctId } from '@/utils/mixpanel';
+import { initAuthListeners } from '@/utils/auth-events';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
+import { Linking } from 'react-native';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -135,6 +137,19 @@ export default function RootLayout() {
 
   useEffect(() => {
     logAppStartup();
+    
+    // Initialize auth listeners for password recovery
+    initAuthListeners();
+    
+    // Log initial URL for debugging
+    Linking.getInitialURL().then(url => {
+      console.log('🔗 [DeepLink] Initial URL:', url);
+    });
+    
+    // Listen for URL events
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      console.log('🔗 [DeepLink] URL event:', url);
+    });
     
     const initializeMixpanel = async () => {
       try {

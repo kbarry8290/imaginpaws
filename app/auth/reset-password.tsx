@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
@@ -23,19 +23,9 @@ export default function ResetPasswordScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const params = useLocalSearchParams();
-  
-  // Extract token and type from URL parameters
-  const token = params.token as string;
-  const type = params.type as string;
   
   console.log('🔗 [Reset] Reset password screen loaded');
-  console.log('🔗 [Reset] Token:', token);
-  console.log('🔗 [Reset] Type:', type);
-  console.log('🔗 [Reset] All params:', params);
-  console.log('🔗 [Reset] Params keys:', Object.keys(params));
-  console.log('🔗 [Reset] Token length:', token?.length);
-  console.log('🔗 [Reset] Type value:', type);
+  console.log('🔗 [Reset] No longer expecting token/type from URL params');
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -44,90 +34,49 @@ export default function ResetPasswordScreen() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Early validation - show error immediately if invalid parameters
-  if (!token || type !== 'recovery') {
-    console.log('🔗 [Reset] Early validation failed - no token or wrong type');
-    console.log('🔗 [Reset] Token exists:', !!token);
-    console.log('🔗 [Reset] Type matches recovery:', type === 'recovery');
-    
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <PasswordResetDebug />
-        <View style={styles.errorContainer}>
-          <AlertCircle size={48} color={colors.error} />
-          <Text style={[styles.errorTitle, { color: colors.text }]}>
-            Invalid Reset Link
-          </Text>
-          <Text style={[styles.errorText, { color: colors.placeholderText }]}>
-            This password reset link is invalid or has expired. Please request a new password reset.
-          </Text>
-          <Text style={[styles.errorText, { color: colors.placeholderText, fontSize: 12 }]}>
-            Debug: Token={token ? 'Present' : 'Missing'}, Type={type || 'Missing'}
-          </Text>
-          <Button
-            title="Back to Login"
-            onPress={() => router.replace('/auth/login' as any)}
-            style={styles.button}
-          />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // No longer need early validation - Supabase handles the session
+  console.log('🔗 [Reset] Screen loaded, checking for recovery session');
 
   useEffect(() => {
-    const validateResetToken = async () => {
-      console.log('🔗 [Reset] Starting token validation');
-      console.log('🔗 [Reset] Type check:', type === 'recovery');
-      console.log('🔗 [Reset] Token check:', !!token);
+    const checkRecoverySession = async () => {
+      console.log('🔗 [Reset] Checking for recovery session');
       
-      // Check if we have the necessary parameters from the deep link
-      if (type !== 'recovery' || !token) {
-        console.log('🔗 [Reset] Validation failed - missing parameters');
-        setError('Invalid reset link. Please request a new password reset.');
-        setValidatingToken(false);
-        return;
-      }
-
       try {
-        console.log('🔗 [Reset] Calling exchangeCodeForSession with token:', token.substring(0, 10) + '...');
+        // Check if we have a session (should be created by the email link)
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // Validate the token with Supabase
-        const { data, error } = await supabase.auth.exchangeCodeForSession(token);
-        
-        console.log('🔗 [Reset] exchangeCodeForSession result:', { 
-          hasData: !!data, 
+        console.log('🔗 [Reset] Session check result:', { 
+          hasSession: !!session, 
           hasError: !!error,
-          errorMessage: error?.message,
-          errorCode: error?.status
+          errorMessage: error?.message
         });
         
         if (error) {
-          console.error('🔗 [Reset] Token validation error:', error);
-          console.error('🔗 [Reset] Error message:', error.message);
-          console.error('🔗 [Reset] Error status:', error.status);
-          
-          if (error.message.includes('expired') || error.message.includes('invalid')) {
-            setError('This reset link has expired or is invalid. Please request a new password reset.');
-          } else {
-            setError('Failed to validate reset link. Please try again.');
-          }
+          console.error('🔗 [Reset] Session check error:', error);
+          setError('Failed to validate reset session. Please try again.');
           setValidatingToken(false);
           return;
         }
 
-        // Token is valid, allow password reset
-        console.log('🔗 [Reset] Reset token validated successfully');
-        console.log('🔗 [Reset] Session data:', data);
+        if (!session) {
+          console.log('🔗 [Reset] No session found - user should not be on this screen');
+          setError('Invalid reset session. Please request a new password reset.');
+          setValidatingToken(false);
+          return;
+        }
+
+        // Session exists, allow password reset
+        console.log('🔗 [Reset] Recovery session found, allowing password reset');
         setValidatingToken(false);
       } catch (err: any) {
-        console.error('🔗 [Reset] Unexpected error validating token:', err);
+        console.error('🔗 [Reset] Unexpected error checking session:', err);
         setError('An unexpected error occurred. Please try again.');
         setValidatingToken(false);
       }
     };
 
-    validateResetToken();
-  }, [params]);
+    checkRecoverySession();
+  }, []);
 
   const handleResetPassword = async () => {
     if (!password) {
@@ -149,16 +98,27 @@ export default function ResetPasswordScreen() {
       setLoading(true);
       setError(null);
       
-      const { error } = await supabase.auth.updateUser({
+      console.log('🔗 [Reset] Attempting to update password');
+      
+      const { data, error } = await supabase.auth.updateUser({
         password: password
       });
 
+      console.log('🔗 [Reset] Update password result:', { 
+        hasData: !!data, 
+        hasError: !!error,
+        errorMessage: error?.message
+      });
+
       if (error) {
+        console.error('🔗 [Reset] Password update error:', error);
         throw error;
       }
 
+      console.log('🔗 [Reset] Password updated successfully');
       setSuccess(true);
     } catch (err: any) {
+      console.error('🔗 [Reset] Password reset failed:', err);
       setError(err.message || 'Failed to reset password');
     } finally {
       setLoading(false);
@@ -206,7 +166,7 @@ export default function ResetPasswordScreen() {
     );
   }
 
-  if (error && (!params.token || params.type !== 'recovery')) {
+  if (error) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.content}>

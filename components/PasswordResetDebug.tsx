@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 
 type DebugInfo = {
   timestamp: string;
@@ -10,7 +9,6 @@ type DebugInfo = {
 
 export default function PasswordResetDebug() {
   const [debugLogs, setDebugLogs] = useState<DebugInfo[]>([]);
-  const params = useLocalSearchParams();
 
   const addLog = (message: string, data?: any) => {
     const log: DebugInfo = {
@@ -27,10 +25,8 @@ export default function PasswordResetDebug() {
 
   useEffect(() => {
     addLog('🔗 [Reset] Debug component mounted');
-    addLog('🔗 [Reset] Initial params received', params);
-    addLog('🔗 [Reset] Token from params', params.token);
-    addLog('🔗 [Reset] Type from params', params.type);
-    addLog('🔗 [Reset] All params keys', Object.keys(params));
+    addLog('🔗 [Reset] No longer expecting URL params');
+    addLog('🔗 [Reset] Using Supabase session-based approach');
   }, []);
 
   return (

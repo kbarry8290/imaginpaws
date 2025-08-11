@@ -48,7 +48,8 @@ export default function ResetPasswordScreen() {
         console.log('🔗 [Reset] Session check result:', { 
           hasSession: !!session, 
           hasError: !!error,
-          errorMessage: error?.message
+          errorMessage: error?.message,
+          sessionUserId: session?.user?.id
         });
         
         if (error) {
@@ -67,6 +68,10 @@ export default function ResetPasswordScreen() {
 
         // Session exists, allow password reset
         console.log('🔗 [Reset] Recovery session found, allowing password reset');
+        console.log('🔗 [Reset] Session details:', {
+          userId: session.user.id,
+          email: session.user.email
+        });
         setValidatingToken(false);
       } catch (err: any) {
         console.error('🔗 [Reset] Unexpected error checking session:', err);

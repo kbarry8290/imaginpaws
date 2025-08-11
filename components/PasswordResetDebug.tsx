@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { supabase } from '@/lib/supabase';
 
 type DebugInfo = {
   timestamp: string;
@@ -23,19 +24,62 @@ export default function PasswordResetDebug() {
     setDebugLogs([]);
   };
 
+  const checkSessionManually = async () => {
+    try {
+      addLog('🔗 [Reset] Manual session check triggered');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      addLog('🔗 [Reset] Manual session result', {
+        hasSession: !!session,
+        hasError: !!error,
+        errorMessage: error?.message,
+        sessionUserId: session?.user?.id,
+        sessionCreatedAt: session?.created_at
+      });
+    } catch (err) {
+      addLog('🔗 [Reset] Manual session check error', err);
+    }
+  };
+
   useEffect(() => {
     addLog('🔗 [Reset] Debug component mounted');
-    addLog('🔗 [Reset] No longer expecting URL params');
     addLog('🔗 [Reset] Using Supabase session-based approach');
+    addLog('🔗 [Reset] Deep link handler will establish session');
+    
+    // Check session status periodically
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        addLog('🔗 [Reset] Session check', {
+          hasSession: !!session,
+          hasError: !!error,
+          errorMessage: error?.message,
+          sessionUserId: session?.user?.id
+        });
+      } catch (err) {
+        addLog('🔗 [Reset] Session check error', err);
+      }
+    };
+    
+    // Check immediately
+    checkSession();
+    
+    // Check every 2 seconds for the first 10 seconds
+    const interval = setInterval(checkSession, 2000);
+    setTimeout(() => clearInterval(interval), 10000);
   }, []);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Password Reset Debug</Text>
-        <TouchableOpacity style={styles.clearButton} onPress={clearLogs}>
-          <Text style={styles.clearButtonText}>Clear</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.actionButton} onPress={checkSessionManually}>
+            <Text style={styles.actionButtonText}>Check Session</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.clearButton} onPress={clearLogs}>
+            <Text style={styles.clearButtonText}>Clear</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       <ScrollView style={styles.logContainer} showsVerticalScrollIndicator={false}>
@@ -69,6 +113,21 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   title: {
     fontSize: 16,

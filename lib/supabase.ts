@@ -17,7 +17,8 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: Platform.OS === 'web',
+      detectSessionInUrl: false, // Disable built-in URL session detection
+      flowType: 'pkce', // Use PKCE auth flow
     },
   }
 );

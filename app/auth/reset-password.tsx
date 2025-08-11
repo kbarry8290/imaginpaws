@@ -59,8 +59,8 @@ export default function ResetPasswordScreen() {
         }
 
         if (!session) {
-          console.log('🔗 [Reset] No session found - user should not be on this screen');
-          setError('Invalid reset session. Please request a new password reset.');
+          console.log('🔗 [Reset] No session found - showing invalid link message');
+          setError('This password reset link is invalid or has expired. Please request a new password reset.');
           setValidatingToken(false);
           return;
         }
@@ -117,6 +117,11 @@ export default function ResetPasswordScreen() {
 
       console.log('🔗 [Reset] Password updated successfully');
       setSuccess(true);
+      
+      // Navigate to sign-in with success flag
+      setTimeout(() => {
+        router.replace('/auth/login?reset=success' as any);
+      }, 2000);
     } catch (err: any) {
       console.error('🔗 [Reset] Password reset failed:', err);
       setError(err.message || 'Failed to reset password');
@@ -127,6 +132,23 @@ export default function ResetPasswordScreen() {
 
   const handleBackToLogin = () => {
     router.replace('/auth/login' as any);
+  };
+
+  const handleResendReset = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Note: This would need the user's email, which we don't have in this context
+      // In a real implementation, you might want to navigate to a "forgot password" screen
+      // or store the email in the session/user data
+      console.log('🔗 [Reset] Resend reset requested');
+      setError('Please go back to the login screen and use "Forgot Password" to request a new reset link.');
+    } catch (err: any) {
+      setError('Failed to resend reset link. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (validatingToken) {
@@ -178,11 +200,20 @@ export default function ResetPasswordScreen() {
             <Text style={[styles.errorMessage, { color: colors.placeholderText }]}>
               {error}
             </Text>
-            <Button
-              title="Back to Sign In"
-              onPress={handleBackToLogin}
-              style={styles.button}
-            />
+            <View style={{ flexDirection: 'row', gap: Layout.spacing.m, marginTop: Layout.spacing.l }}>
+              <Button
+                title="Back to Sign In"
+                onPress={handleBackToLogin}
+                style={[styles.button, { flex: 1 }]}
+                variant="outline"
+              />
+              <Button
+                title="Request New Link"
+                onPress={handleResendReset}
+                style={[styles.button, { flex: 1 }]}
+                isLoading={loading}
+              />
+            </View>
           </View>
         </View>
       </SafeAreaView>

@@ -17,6 +17,7 @@ import Button from '@/components/ui/Button';
 import { Lock, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react-native';
 import Card from '@/components/ui/Card';
 import { supabase } from '@/lib/supabase';
+import PasswordResetDebug from '@/components/PasswordResetDebug';
 
 export default function ResetPasswordScreen() {
   const colorScheme = useColorScheme();
@@ -28,10 +29,13 @@ export default function ResetPasswordScreen() {
   const token = params.token as string;
   const type = params.type as string;
   
-  console.log('🧪 Reset password screen loaded');
-  console.log('Token:', token);
-  console.log('Type:', type);
-  console.log('All params:', params);
+  console.log('🔗 [Reset] Reset password screen loaded');
+  console.log('🔗 [Reset] Token:', token);
+  console.log('🔗 [Reset] Type:', type);
+  console.log('🔗 [Reset] All params:', params);
+  console.log('🔗 [Reset] Params keys:', Object.keys(params));
+  console.log('🔗 [Reset] Token length:', token?.length);
+  console.log('🔗 [Reset] Type value:', type);
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,8 +46,13 @@ export default function ResetPasswordScreen() {
 
   // Early validation - show error immediately if invalid parameters
   if (!token || type !== 'recovery') {
+    console.log('🔗 [Reset] Early validation failed - no token or wrong type');
+    console.log('🔗 [Reset] Token exists:', !!token);
+    console.log('🔗 [Reset] Type matches recovery:', type === 'recovery');
+    
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <PasswordResetDebug />
         <View style={styles.errorContainer}>
           <AlertCircle size={48} color={colors.error} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>
@@ -51,6 +60,9 @@ export default function ResetPasswordScreen() {
           </Text>
           <Text style={[styles.errorText, { color: colors.placeholderText }]}>
             This password reset link is invalid or has expired. Please request a new password reset.
+          </Text>
+          <Text style={[styles.errorText, { color: colors.placeholderText, fontSize: 12 }]}>
+            Debug: Token={token ? 'Present' : 'Missing'}, Type={type || 'Missing'}
           </Text>
           <Button
             title="Back to Login"
@@ -64,19 +76,36 @@ export default function ResetPasswordScreen() {
 
   useEffect(() => {
     const validateResetToken = async () => {
+      console.log('🔗 [Reset] Starting token validation');
+      console.log('🔗 [Reset] Type check:', type === 'recovery');
+      console.log('🔗 [Reset] Token check:', !!token);
+      
       // Check if we have the necessary parameters from the deep link
       if (type !== 'recovery' || !token) {
+        console.log('🔗 [Reset] Validation failed - missing parameters');
         setError('Invalid reset link. Please request a new password reset.');
         setValidatingToken(false);
         return;
       }
 
       try {
+        console.log('🔗 [Reset] Calling exchangeCodeForSession with token:', token.substring(0, 10) + '...');
+        
         // Validate the token with Supabase
         const { data, error } = await supabase.auth.exchangeCodeForSession(token);
         
+        console.log('🔗 [Reset] exchangeCodeForSession result:', { 
+          hasData: !!data, 
+          hasError: !!error,
+          errorMessage: error?.message,
+          errorCode: error?.status
+        });
+        
         if (error) {
-          console.error('Token validation error:', error);
+          console.error('🔗 [Reset] Token validation error:', error);
+          console.error('🔗 [Reset] Error message:', error.message);
+          console.error('🔗 [Reset] Error status:', error.status);
+          
           if (error.message.includes('expired') || error.message.includes('invalid')) {
             setError('This reset link has expired or is invalid. Please request a new password reset.');
           } else {
@@ -87,10 +116,11 @@ export default function ResetPasswordScreen() {
         }
 
         // Token is valid, allow password reset
-        console.log('Reset token validated successfully');
+        console.log('🔗 [Reset] Reset token validated successfully');
+        console.log('🔗 [Reset] Session data:', data);
         setValidatingToken(false);
       } catch (err: any) {
-        console.error('Unexpected error validating token:', err);
+        console.error('🔗 [Reset] Unexpected error validating token:', err);
         setError('An unexpected error occurred. Please try again.');
         setValidatingToken(false);
       }
@@ -201,6 +231,7 @@ export default function ResetPasswordScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <PasswordResetDebug />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}

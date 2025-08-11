@@ -48,7 +48,7 @@ function useProtectedRoute(user: any) {
     const currentPath = segments.join('/');
     const isPublicRoute = publicRoutes.some(route => currentPath.includes(route));
     
-    console.log('Protected route check:', { 
+    console.log('🔗 [DeepLink] Protected route check:', { 
       user: !!user, 
       inAuthGroup, 
       inOnboardingGroup, 

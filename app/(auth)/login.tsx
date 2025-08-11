@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
 import Layout from '@/constants/Layout';
@@ -24,11 +24,23 @@ export default function LoginScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const { signIn } = useAuth();
+  const params = useLocalSearchParams();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(params.reset === 'success');
+
+  // Clear success message after 5 seconds
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess]);
 
   const handleLogin = async () => {
     if (!email) {
@@ -77,6 +89,15 @@ export default function LoginScreen() {
             <Text style={[styles.title, { color: colors.text }]}>Welcome Back! 👋</Text>
             <Text style={[styles.subtitle, { color: colors.placeholderText }]}>Sign in with your email and password</Text>
           </View>
+          
+          {showSuccess && (
+            <View style={[styles.errorContainer, { backgroundColor: colors.success + '20' }]}> 
+              <Text style={[styles.errorText, { color: colors.success }]}>
+                ✅ Password reset successful! You can now sign in with your new password.
+              </Text>
+            </View>
+          )}
+          
           {error && (
             <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}> 
               <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>

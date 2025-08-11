@@ -123,9 +123,13 @@ export default function ResetPasswordScreen() {
       console.log('🔗 [Reset] Password updated successfully');
       setSuccess(true);
       
+      // Sign out the user to clear the recovery session
+      console.log('🔗 [Reset] Signing out to clear recovery session');
+      await supabase.auth.signOut();
+      
       // Navigate to sign-in with success flag
       setTimeout(() => {
-        router.replace('/auth/login?reset=success' as any);
+        router.replace('/(auth)/login?reset=success' as any);
       }, 2000);
     } catch (err: any) {
       console.error('🔗 [Reset] Password reset failed:', err);
@@ -135,8 +139,11 @@ export default function ResetPasswordScreen() {
     }
   };
 
-  const handleBackToLogin = () => {
-    router.replace('/auth/login' as any);
+  const handleBackToLogin = async () => {
+    console.log('🔗 [Reset] User going back to login, clearing recovery session');
+    // Sign out to clear the recovery session
+    await supabase.auth.signOut();
+    router.replace('/(auth)/login' as any);
   };
 
   const handleResendReset = async () => {
@@ -235,7 +242,7 @@ export default function ResetPasswordScreen() {
         <View style={styles.content}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={handleBackToLogin}
           >
             <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>

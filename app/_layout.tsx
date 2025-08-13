@@ -18,10 +18,13 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { logAppStartup, logScreenView } from '@/utils/logging';
 import { initMixpanel, trackEvent, checkDistinctId } from '@/utils/mixpanel';
 import { initAuthListeners } from '@/utils/auth-events';
-import { initDeepLinkHandling } from '@/utils/deep-link-handler';
+import { initSupabaseAuthHandling } from '@/utils/supabase-auth-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
+
+// Buffer shim for Supabase compatibility
+global.Buffer = global.Buffer || require('buffer').Buffer;
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -43,12 +46,15 @@ function useProtectedRoute(user: any) {
   useEffect(() => {
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
-    const isResetPasswordRoute = segments.some(segment => segment === 'reset-password');
     
     // Define public routes that don't require authentication
     const publicRoutes = ['welcome', 'login', 'signup', 'auth/reset-password', 'reset-password'];
     const currentPath = segments.join('/');
     const isPublicRoute = publicRoutes.some(route => currentPath.includes(route));
+    
+    // Special handling for reset password route
+    const isResetPasswordRoute = segments.some(segment => segment === 'reset-password') || 
+                                currentPath.includes('auth/reset-password');
     
     console.log('🔗 [DeepLink] Protected route check:', { 
       user: !!user, 
@@ -69,6 +75,12 @@ function useProtectedRoute(user: any) {
     // Allow access to auth group routes (including reset-password) without authentication
     if (!user && inAuthGroup) {
       console.log('🔓 Allowing unauthenticated access to auth group route');
+      return;
+    }
+    
+    // Special handling for reset password route - always allow access
+    if (isResetPasswordRoute) {
+      console.log('🔓 Allowing access to reset password route');
       return;
     }
     
@@ -141,8 +153,8 @@ export default function RootLayout() {
     // Initialize auth listeners for password recovery
     initAuthListeners();
     
-    // Initialize deep link handling
-    initDeepLinkHandling();
+    // Initialize Supabase auth handling
+    initSupabaseAuthHandling();
     
     const initializeMixpanel = async () => {
       try {

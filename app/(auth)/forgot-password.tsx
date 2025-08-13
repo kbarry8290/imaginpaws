@@ -19,6 +19,7 @@ import Button from '@/components/ui/Button';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react-native';
 import Card from '@/components/ui/Card';
 import { supabase } from '@/lib/supabase';
+import { Linking } from 'react-native';
 
 export default function ForgotPasswordScreen() {
   const colorScheme = useColorScheme();
@@ -40,8 +41,11 @@ export default function ForgotPasswordScreen() {
       setLoading(true);
       setError(null);
       
+      const redirectUrl = 'imaginpaws://auth/reset-password';
+      console.log('🔗 [ForgotPassword] Redirect URL:', redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'imaginpaws://auth/reset-password',
+        redirectTo: redirectUrl,
       });
 
       if (error) {

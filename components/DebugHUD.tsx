@@ -31,7 +31,7 @@ export default function DebugHUD({ deepLinkStatus, lastError }: DebugHUDProps) {
 
     if (tapCount >= 4) {
       logInfo('DEBUG_HUD', 'Diagnostics screen accessed via HUD tap');
-      router.push('/(diagnostics)/diagnostics');
+      router.push('/(diagnostics)/diagnostics' as any);
       setTapCount(0);
     }
   }, [tapCount, lastTapTime, router]);
@@ -75,7 +75,7 @@ export default function DebugHUD({ deepLinkStatus, lastError }: DebugHUDProps) {
       style={[
         styles.container,
         { 
-          backgroundColor: colors.card,
+          backgroundColor: colors.cardBackground,
           borderColor: getStatusColor(),
         }
       ]}

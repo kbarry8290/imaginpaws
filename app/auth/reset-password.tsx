@@ -38,6 +38,7 @@ export default function ResetPasswordScreen() {
 
   useEffect(() => {
     const checkRecoverySession = async () => {
+      console.log('🔗 [Reset] Starting session check...');
       const startTime = time();
       
       if (DEBUG_DIAGNOSTICS) {
@@ -46,7 +47,15 @@ export default function ResetPasswordScreen() {
       
       try {
         // Check if we have a session (should be created by the email link)
+        console.log('🔗 [Reset] Calling supabase.auth.getSession()...');
         const { data: { session }, error } = await supabase.auth.getSession();
+        
+        console.log('🔗 [Reset] Session check result:', { 
+          hasSession: !!session, 
+          hasError: !!error,
+          errorMessage: error?.message,
+          sessionUserId: session?.user?.id
+        });
         
         if (DEBUG_DIAGNOSTICS) {
           logInfo('RESET_PASSWORD', 'Session check result', { 
@@ -59,6 +68,7 @@ export default function ResetPasswordScreen() {
         }
         
         if (error) {
+          console.error('🔗 [Reset] Session check error:', error);
           if (DEBUG_DIAGNOSTICS) {
             logError('RESET_PASSWORD', 'Session check error', { 
               error: error.message,
@@ -71,6 +81,7 @@ export default function ResetPasswordScreen() {
         }
 
         if (!session) {
+          console.log('🔗 [Reset] No session found - showing invalid link message');
           if (DEBUG_DIAGNOSTICS) {
             logWarn('RESET_PASSWORD', 'No session found', { duration: duration(startTime) });
           }
@@ -80,6 +91,12 @@ export default function ResetPasswordScreen() {
         }
 
         // Session exists, allow password reset
+        console.log('🔗 [Reset] Recovery session found, allowing password reset');
+        console.log('🔗 [Reset] Session details:', {
+          userId: session.user.id,
+          email: session.user.email
+        });
+        
         if (DEBUG_DIAGNOSTICS) {
           logInfo('RESET_PASSWORD', 'Recovery session found', {
             userId: session.user.id,
@@ -87,8 +104,12 @@ export default function ResetPasswordScreen() {
             duration: duration(startTime)
           });
         }
+        
+        console.log('🔗 [Reset] Setting validatingToken to false...');
         setValidatingToken(false);
+        console.log('🔗 [Reset] Session check completed successfully');
       } catch (err: any) {
+        console.error('🔗 [Reset] Unexpected error checking session:', err);
         if (DEBUG_DIAGNOSTICS) {
           logError('RESET_PASSWORD', 'Unexpected error checking session', { 
             error: err.message,
@@ -100,7 +121,17 @@ export default function ResetPasswordScreen() {
       }
     };
 
+    console.log('🔗 [Reset] useEffect triggered, calling checkRecoverySession...');
     checkRecoverySession();
+    
+    // Add a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log('🔗 [Reset] Session check timeout - forcing validation to complete');
+      setValidatingToken(false);
+      setError('Session validation timed out. Please try again.');
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const handleResetPassword = async () => {

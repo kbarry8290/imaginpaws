@@ -140,7 +140,7 @@ function RootLayoutNav() {
         <Stack.Screen name="+not-found" />
       </Stack>
       
-      <DebugHUD deepLinkStatus="idle" />
+      {/* <DebugHUD deepLinkStatus="idle" /> */}
     </>
   );
 }

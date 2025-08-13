@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { useCredits } from '@/contexts/CreditsContext';
 import Button from '@/components/ui/Button';
+import { DEBUG_DIAGNOSTICS, logInfo } from '@/utils/DebugLogger';
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
@@ -29,6 +30,8 @@ export default function SettingsScreen() {
   
   const [highQualityEnabled, setHighQualityEnabled] = React.useState(true);
   const [autoSaveEnabled, setAutoSaveEnabled] = React.useState(false);
+  const [tapCount, setTapCount] = React.useState(0);
+  const [lastTapTime, setLastTapTime] = React.useState(0);
 
   const handleSignOut = async () => {
     try {
@@ -51,13 +54,33 @@ export default function SettingsScreen() {
     setAutoSaveEnabled(prev => !prev);
   };
 
+  const handleTitleTap = () => {
+    if (!DEBUG_DIAGNOSTICS) return;
+    
+    const now = Date.now();
+    if (now - lastTapTime > 2000) {
+      setTapCount(1);
+    } else {
+      setTapCount(prev => prev + 1);
+    }
+    setLastTapTime(now);
+
+    if (tapCount >= 4) {
+      logInfo('SETTINGS', 'Diagnostics screen accessed via title tap');
+      router.push('/(diagnostics)/diagnostics');
+      setTapCount(0);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <SettingsIcon size={24} color={colors.primary} />
-        <Text style={[styles.title, { color: colors.text }]}>
-          Settings
-        </Text>
+        <TouchableOpacity onPress={handleTitleTap} style={styles.titleContainer}>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Settings
+          </Text>
+        </TouchableOpacity>
       </View>
       
       <ScrollView 
@@ -204,6 +227,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: 'Nunito-Bold',
     marginLeft: Layout.spacing.s,
+  },
+  titleContainer: {
+    flex: 1,
   },
   scrollContent: {
     padding: Layout.spacing.l,

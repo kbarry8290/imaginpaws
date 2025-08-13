@@ -19,6 +19,8 @@ import { logAppStartup, logScreenView } from '@/utils/logging';
 import { initMixpanel, trackEvent, checkDistinctId } from '@/utils/mixpanel';
 import { initAuthListeners } from '@/utils/auth-events';
 import { initSupabaseAuthHandling } from '@/utils/supabase-auth-handler';
+import DebugHUD from '@/components/DebugHUD';
+import { DEBUG_DIAGNOSTICS, logInfo } from '@/utils/DebugLogger';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
@@ -113,17 +115,33 @@ function useProtectedRoute(user: any) {
 
 function RootLayoutNav() {
   const { user } = useAuth();
+  const segments = useSegments();
   
   useProtectedRoute(user);
 
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+  // Log route transitions
+  useEffect(() => {
+    if (segments.length > 0) {
+      const path = segments.join('/');
+      if (DEBUG_DIAGNOSTICS) {
+        logInfo('ROUTING', 'NAV_TO', { path });
+      }
+    }
+  }, [segments]);
 
-      <Stack.Screen name="+not-found" />
-    </Stack>
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(diagnostics)" options={{ headerShown: false }} />
+
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      
+      <DebugHUD deepLinkStatus="idle" />
+    </>
   );
 }
 

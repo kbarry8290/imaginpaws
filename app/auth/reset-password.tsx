@@ -18,14 +18,16 @@ import { Lock, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react-native';
 import Card from '@/components/ui/Card';
 import { supabase } from '@/lib/supabase';
 import PasswordResetDebug from '@/components/PasswordResetDebug';
+import { logInfo, logWarn, logError, time, duration, DEBUG_DIAGNOSTICS } from '@/utils/DebugLogger';
 
 export default function ResetPasswordScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   
-  console.log('🔗 [Reset] Reset password screen loaded');
-  console.log('🔗 [Reset] No longer expecting token/type from URL params');
+  if (DEBUG_DIAGNOSTICS) {
+    logInfo('RESET_PASSWORD', 'Screen loaded');
+  }
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -34,47 +36,65 @@ export default function ResetPasswordScreen() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // No longer need early validation - Supabase handles the session
-  console.log('🔗 [Reset] Screen loaded, checking for recovery session');
-
   useEffect(() => {
     const checkRecoverySession = async () => {
-      console.log('🔗 [Reset] Checking for recovery session');
+      const startTime = time();
+      
+      if (DEBUG_DIAGNOSTICS) {
+        logInfo('RESET_PASSWORD', 'AUTH_UPDATE_PW_START', { startTime });
+      }
       
       try {
         // Check if we have a session (should be created by the email link)
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        console.log('🔗 [Reset] Session check result:', { 
-          hasSession: !!session, 
-          hasError: !!error,
-          errorMessage: error?.message,
-          sessionUserId: session?.user?.id
-        });
+        if (DEBUG_DIAGNOSTICS) {
+          logInfo('RESET_PASSWORD', 'Session check result', { 
+            hasSession: !!session, 
+            hasError: !!error,
+            errorMessage: error?.message,
+            sessionUserId: session?.user?.id,
+            duration: duration(startTime)
+          });
+        }
         
         if (error) {
-          console.error('🔗 [Reset] Session check error:', error);
+          if (DEBUG_DIAGNOSTICS) {
+            logError('RESET_PASSWORD', 'Session check error', { 
+              error: error.message,
+              duration: duration(startTime)
+            });
+          }
           setError('Failed to validate reset session. Please try again.');
           setValidatingToken(false);
           return;
         }
 
         if (!session) {
-          console.log('🔗 [Reset] No session found - showing invalid link message');
+          if (DEBUG_DIAGNOSTICS) {
+            logWarn('RESET_PASSWORD', 'No session found', { duration: duration(startTime) });
+          }
           setError('This password reset link is invalid or has expired. Please request a new password reset.');
           setValidatingToken(false);
           return;
         }
 
         // Session exists, allow password reset
-        console.log('🔗 [Reset] Recovery session found, allowing password reset');
-        console.log('🔗 [Reset] Session details:', {
-          userId: session.user.id,
-          email: session.user.email
-        });
+        if (DEBUG_DIAGNOSTICS) {
+          logInfo('RESET_PASSWORD', 'Recovery session found', {
+            userId: session.user.id,
+            email: session.user.email,
+            duration: duration(startTime)
+          });
+        }
         setValidatingToken(false);
       } catch (err: any) {
-        console.error('🔗 [Reset] Unexpected error checking session:', err);
+        if (DEBUG_DIAGNOSTICS) {
+          logError('RESET_PASSWORD', 'Unexpected error checking session', { 
+            error: err.message,
+            duration: duration(startTime)
+          });
+        }
         setError('An unexpected error occurred. Please try again.');
         setValidatingToken(false);
       }
@@ -103,36 +123,63 @@ export default function ResetPasswordScreen() {
       setLoading(true);
       setError(null);
       
-      console.log('🔗 [Reset] Attempting to update password');
+      const startTime = time();
+      
+      if (DEBUG_DIAGNOSTICS) {
+        logInfo('RESET_PASSWORD', 'AUTH_UPDATE_PW_START', { startTime });
+      }
       
       const { data, error } = await supabase.auth.updateUser({
         password: password
       });
 
-      console.log('🔗 [Reset] Update password result:', { 
-        hasData: !!data, 
-        hasError: !!error,
-        errorMessage: error?.message
-      });
+      if (DEBUG_DIAGNOSTICS) {
+        logInfo('RESET_PASSWORD', 'Update password result', { 
+          hasData: !!data, 
+          hasError: !!error,
+          errorMessage: error?.message,
+          duration: duration(startTime)
+        });
+      }
 
       if (error) {
-        console.error('🔗 [Reset] Password update error:', error);
+        if (DEBUG_DIAGNOSTICS) {
+          logError('RESET_PASSWORD', 'AUTH_UPDATE_PW_ERR', { 
+            error: error.message,
+            duration: duration(startTime)
+          });
+        }
         throw error;
       }
 
-      console.log('🔗 [Reset] Password updated successfully');
+      if (DEBUG_DIAGNOSTICS) {
+        logInfo('RESET_PASSWORD', 'AUTH_UPDATE_PW_OK', { duration: duration(startTime) });
+      }
       setSuccess(true);
       
       // Sign out the user to clear the recovery session
-      console.log('🔗 [Reset] Signing out to clear recovery session');
+      if (DEBUG_DIAGNOSTICS) {
+        logInfo('RESET_PASSWORD', 'Signing out to clear recovery session');
+      }
       await supabase.auth.signOut();
+      
+      if (DEBUG_DIAGNOSTICS) {
+        logInfo('RESET_PASSWORD', 'AUTH_SIGNOUT_OK');
+      }
       
       // Navigate to sign-in with success flag
       setTimeout(() => {
+        if (DEBUG_DIAGNOSTICS) {
+          logInfo('RESET_PASSWORD', 'NAV_TO', { route: '/(auth)/login?reset=success' });
+        }
         router.replace('/(auth)/login?reset=success' as any);
       }, 2000);
     } catch (err: any) {
-      console.error('🔗 [Reset] Password reset failed:', err);
+      if (DEBUG_DIAGNOSTICS) {
+        logError('RESET_PASSWORD', 'Password reset failed', { 
+          error: err.message
+        });
+      }
       setError(err.message || 'Failed to reset password');
     } finally {
       setLoading(false);

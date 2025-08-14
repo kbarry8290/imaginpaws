@@ -280,12 +280,38 @@ export async function spendOneCredit(): Promise<UserCredits> {
     let newBonusCredits = credits.bonus_credits;
     let newDailyScansUsed = isNewDay ? 1 : credits.daily_scans_used + 1;
 
-    if (credits.picture_credits > 0) {
+    // Check if user has free daily credits available (2 per day)
+    const hasFreeCredits = isNewDay || credits.daily_scans_used < 2;
+    
+    if (hasFreeCredits) {
+      // Use free daily credit - just increment daily_scans_used
+      logCreditsDebug('Using free daily credit', { 
+        isNewDay, 
+        currentDailyScansUsed: credits.daily_scans_used,
+        newDailyScansUsed 
+      });
+    } else if (credits.picture_credits > 0) {
+      // Use paid picture credit
       newPictureCredits = credits.picture_credits - 1;
+      logCreditsDebug('Using paid picture credit', { 
+        currentPictureCredits: credits.picture_credits,
+        newPictureCredits 
+      });
     } else if (credits.bonus_credits > 0) {
+      // Use paid bonus credit
       newBonusCredits = credits.bonus_credits - 1;
+      logCreditsDebug('Using paid bonus credit', { 
+        currentBonusCredits: credits.bonus_credits,
+        newBonusCredits 
+      });
     } else {
-      logCreditsError('spendOneCredit no credits available');
+      logCreditsError('spendOneCredit no credits available', {
+        hasFreeCredits,
+        isNewDay,
+        dailyScansUsed: credits.daily_scans_used,
+        pictureCredits: credits.picture_credits,
+        bonusCredits: credits.bonus_credits
+      });
       throw new Error('NO_CREDITS');
     }
 
@@ -298,7 +324,9 @@ export async function spendOneCredit(): Promise<UserCredits> {
       newBonusCredits,
       newDailyScansUsed,
       isNewDay,
-      today
+      today,
+      hasFreeCredits: isNewDay || credits.daily_scans_used < 2,
+      freeCreditsRemaining: isNewDay ? 2 : 2 - credits.daily_scans_used
     });
 
     // Read-modify-write with optimistic locking

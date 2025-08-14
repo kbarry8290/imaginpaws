@@ -26,7 +26,7 @@ export default function SettingsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { credits, dailyScansUsed } = useCredits();
+  const { pictureCredits, dailyScansUsed, error: creditsError, clearError } = useCredits();
   
   const [highQualityEnabled, setHighQualityEnabled] = React.useState(true);
   const [autoSaveEnabled, setAutoSaveEnabled] = React.useState(false);
@@ -109,7 +109,7 @@ export default function SettingsScreen() {
             <View style={styles.creditStats}>
               <View style={styles.creditItem}>
                 <Text style={[styles.creditValue, { color: colors.text }]}>
-                  {credits}
+                  {pictureCredits}
                 </Text>
                 <Text style={[styles.creditLabel, { color: colors.placeholderText }]}>
                   Available Credits
@@ -128,7 +128,7 @@ export default function SettingsScreen() {
               </View>
             </View>
 
-            {credits === 0 && (
+            {pictureCredits === 0 && (
               <Text style={[styles.freeUserNote, { color: colors.placeholderText }]}>
                 Free users get 2 new picture credits each day
               </Text>
@@ -142,6 +142,15 @@ export default function SettingsScreen() {
             />
           </View>
         </Card>
+        
+        {creditsError && (
+          <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
+            <Text style={[styles.errorText, { color: colors.error }]}>{creditsError}</Text>
+            <TouchableOpacity onPress={clearError} style={styles.dismissButton}>
+              <Text style={[styles.dismissText, { color: colors.error }]}>Dismiss</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         
         <Card style={styles.settingsSection}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -336,5 +345,24 @@ const styles = StyleSheet.create({
   },
   creditsButton: {
     minWidth: 200,
+  },
+  errorContainer: {
+    padding: Layout.spacing.m,
+    borderRadius: Layout.borderRadius.small,
+    marginBottom: Layout.spacing.l,
+  },
+  errorText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    textAlign: 'center',
+  },
+  dismissButton: {
+    marginTop: Layout.spacing.s,
+    alignSelf: 'flex-end',
+  },
+  dismissText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    textDecorationLine: 'underline',
   },
 });

@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import Purchases, { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import { Platform, Alert } from 'react-native';
-import { useCredits } from './CreditsContext';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 import { logPurchaseEvent, logError } from '@/utils/logging';
+import { useCredits } from './CreditsContext';
+import { isDuplicatePurchase, recordPurchaseEvent } from '@/utils/idempotency';
 
 const REVENUECAT_API_KEY = Platform.select({
   ios: 'appl_FwOKNWNOVyeGgcGlnqdUGPQGoQZ',
@@ -30,8 +31,8 @@ const PurchasesContext = createContext<PurchasesContextType | undefined>(undefin
 export function PurchasesProvider({ children }: { children: React.ReactNode }) {
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addCredits } = useCredits();
   const { user } = useAuth();
+  const { applyPurchase } = useCredits();
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -98,8 +99,26 @@ export function PurchasesProvider({ children }: { children: React.ReactNode }) {
       const creditAmount = CREDIT_PACKS[productIdentifier as keyof typeof CREDIT_PACKS];
       
       if (creditAmount) {
+        // Check for duplicate purchase within 5 seconds
+        if (isDuplicatePurchase(productIdentifier, creditAmount)) {
+          console.log('RevenueCat: Duplicate purchase detected, ignoring:', productIdentifier);
+          return;
+        }
+
         console.log('RevenueCat: Adding credits:', creditAmount);
-        await addCredits(creditAmount);
+        
+        // Use the credits context to apply purchase
+        const success = await applyPurchase(productIdentifier, creditAmount);
+        
+        if (!success) {
+          throw new Error('Failed to apply purchase to credits');
+        }
+        
+        console.log('RevenueCat: Credits updated successfully');
+        
+        // Record the purchase event for idempotency
+        recordPurchaseEvent(productIdentifier, creditAmount);
+        
         await logPurchase(productIdentifier, creditAmount);
         
         logPurchaseEvent('completed', productIdentifier, {

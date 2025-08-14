@@ -33,7 +33,7 @@ export default function PetToPersonScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const { user } = useAuth();
-  const { canScan, consumeCredit } = useCredits();
+  const { canScan, spendOne, isSpending, error: creditsError, clearError } = useCredits();
   
   const [petPhoto, setPetPhoto] = useState<string | null>(null);
   const [isTransforming, setIsTransforming] = useState(false);
@@ -110,8 +110,8 @@ export default function PetToPersonScreen() {
 
         clearTimeout(timeoutId);
 
-        // Only consume credit after successful transformation
-        const success = await consumeCredit();
+        // Only spend credit after successful transformation
+        const success = await spendOne();
         if (!success) {
           throw new Error('Failed to consume credit');
         }
@@ -210,6 +210,15 @@ export default function PetToPersonScreen() {
             </View>
           )}
           
+          {creditsError && (
+            <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
+              <Text style={[styles.errorText, { color: colors.error }]}>{creditsError}</Text>
+              <TouchableOpacity onPress={clearError} style={styles.dismissButton}>
+                <Text style={[styles.dismissText, { color: colors.error }]}>Dismiss</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          
           <PhotoUploader 
             photo={petPhoto}
             onPhotoSelect={setPetPhoto}
@@ -234,8 +243,8 @@ export default function PetToPersonScreen() {
         <Button
           title="Transform"
           onPress={handleTransform}
-          disabled={!petPhoto || isTransforming}
-          isLoading={isTransforming}
+          disabled={!petPhoto || isTransforming || isSpending}
+          isLoading={isTransforming || isSpending}
           icon={<Wand2 size={24} color="white" />}
         />
       </View>
@@ -283,5 +292,14 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: Layout.spacing.m,
+  },
+  dismissButton: {
+    marginTop: Layout.spacing.s,
+    alignSelf: 'flex-end',
+  },
+  dismissText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    textDecorationLine: 'underline',
   },
 }); 

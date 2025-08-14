@@ -66,7 +66,7 @@ export default function PetPortraitScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
-  const { canScan, consumeCredit } = useCredits();
+  const { canScan, spendOne, isSpending, error: creditsError, clearError } = useCredits();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -172,8 +172,8 @@ export default function PetPortraitScreen() {
         mood: settings.mood,
       });
 
-      // Only consume credit after successful transformation
-      const success = await consumeCredit();
+      // Only spend credit after successful transformation
+      const success = await spendOne();
       if (!success) {
         throw new Error('Failed to consume credit');
       }
@@ -272,6 +272,15 @@ export default function PetPortraitScreen() {
             <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
           </View>
         )}
+        
+        {creditsError && (
+          <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
+            <Text style={[styles.errorText, { color: colors.error }]}>{creditsError}</Text>
+            <TouchableOpacity onPress={clearError} style={styles.dismissButton}>
+              <Text style={[styles.dismissText, { color: colors.error }]}>Dismiss</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.photoSection}>
           <PhotoUploader 
@@ -309,8 +318,8 @@ export default function PetPortraitScreen() {
         <Button
           title="Generate Portrait"
           onPress={handleGenerate}
-          disabled={!image || isGenerating}
-          isLoading={isGenerating}
+          disabled={!image || isGenerating || isSpending}
+          isLoading={isGenerating || isSpending}
           icon={<Sparkles size={24} color="white" />}
         />
       </View>
@@ -364,5 +373,14 @@ const styles = StyleSheet.create({
   buttonContainer: {
     padding: Layout.spacing.l,
     borderTopWidth: 1,
+  },
+  dismissButton: {
+    marginTop: Layout.spacing.s,
+    alignSelf: 'flex-end',
+  },
+  dismissText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    textDecorationLine: 'underline',
   },
 }); 

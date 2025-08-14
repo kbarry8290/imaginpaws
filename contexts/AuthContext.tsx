@@ -7,6 +7,7 @@ import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trackAuthEvent } from '@/utils/mixpanel';
+import { ensureCreditsRow, getCredits } from '@/lib/creditsApi';
 
 const SESSION_KEY = 'supabase.session';
 
@@ -41,6 +42,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Saving session to AsyncStorage');
         await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
         trackAuthEvent('login', undefined, session.user.id);
+        
+        // Create credits row if missing (only on sign in)
+        if (event === 'SIGNED_IN') {
+          try {
+            console.log('Creating credits row for new user...');
+            await ensureCreditsRow();
+            const credits = await getCredits();
+            console.log('Credits row created/fetched:', credits);
+          } catch (error) {
+            console.error('Error creating credits row:', error);
+            // Don't fail auth if credits creation fails
+          }
+        }
       } else {
         // Remove session when logged out
         console.log('Removing session from AsyncStorage');
@@ -98,6 +112,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(session);
           setUser(session.user);
           trackAuthEvent('login', undefined, session.user.id);
+          
+          // Ensure credits row exists for existing session
+          try {
+            console.log('Ensuring credits row exists for existing session...');
+            await ensureCreditsRow();
+            const credits = await getCredits();
+            console.log('Credits row ensured for existing session:', credits);
+          } catch (error) {
+            console.error('Error ensuring credits row for existing session:', error);
+            // Don't fail auth if credits creation fails
+          }
         }
       } else {
         console.log('No saved session found');

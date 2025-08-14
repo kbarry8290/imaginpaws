@@ -42,7 +42,7 @@ export default function GalleryScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const { user } = useAuth();
-  const { credits, dailyScansUsed } = useCredits();
+  const { pictureCredits, dailyScansUsed } = useCredits();
   const { width: screenWidth } = useWindowDimensions();
   
   const [transformations, setTransformations] = useState<Transformation[]>([]);
@@ -130,7 +130,7 @@ export default function GalleryScreen() {
         </View>
         <View style={[styles.creditsIndicator, { backgroundColor: colors.primary + '15' }]}>
           <Text style={[styles.creditsText, { color: colors.primary }]}>
-            {credits + (2 - dailyScansUsed)} transformations left
+                            {pictureCredits + (2 - dailyScansUsed)} transformations left
           </Text>
         </View>
       </View>

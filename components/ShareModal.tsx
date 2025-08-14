@@ -37,11 +37,11 @@ export default function ShareModal({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
-  const { credits } = useCredits();
+  const { pictureCredits } = useCredits();
   const [includeWatermark, setIncludeWatermark] = React.useState(true);
   
   // User is considered Pro if they have any credits left (not including free credits)
-  const isPro = credits > 0;
+  const isPro = pictureCredits > 0;
 
   const handleAction = (type: 'single' | 'combined') => {
     onShare(type, includeWatermark);

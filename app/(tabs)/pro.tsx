@@ -6,6 +6,7 @@ import {
   ScrollView,
   Platform,
   SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from 'react-native';
@@ -20,7 +21,7 @@ export default function ProScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { packages, loading, purchasePackage, restorePurchases } = usePurchases();
-  const { credits, dailyScansUsed } = useCredits();
+  const { pictureCredits, dailyScansUsed, error: creditsError, clearError } = useCredits();
   const [error, setError] = useState<string | null>(null);
 
   // Log initial state
@@ -28,7 +29,7 @@ export default function ProScreen() {
     console.log('ProScreen: Initial render', {
       packagesCount: packages.length,
       loading,
-      credits,
+      pictureCredits,
       dailyScansUsed
     });
   }, []);
@@ -69,7 +70,7 @@ export default function ProScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: colors.text }]}>
-                {credits}
+                {pictureCredits}
               </Text>
               <Text style={[styles.statLabel, { color: colors.placeholderText }]}>
                 Credits Left
@@ -90,6 +91,15 @@ export default function ProScreen() {
         {error && (
           <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
             <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+          </View>
+        )}
+        
+        {creditsError && (
+          <View style={[styles.errorContainer, { backgroundColor: colors.error + '20' }]}>
+            <Text style={[styles.errorText, { color: colors.error }]}>{creditsError}</Text>
+            <TouchableOpacity onPress={clearError} style={styles.dismissButton}>
+              <Text style={[styles.dismissText, { color: colors.error }]}>Dismiss</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -250,5 +260,14 @@ const styles = StyleSheet.create({
   errorCard: {
     alignItems: 'center',
     padding: Layout.spacing.l,
+  },
+  dismissButton: {
+    marginTop: Layout.spacing.s,
+    alignSelf: 'flex-end',
+  },
+  dismissText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    textDecorationLine: 'underline',
   },
 });

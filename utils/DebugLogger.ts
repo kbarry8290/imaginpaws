@@ -257,3 +257,24 @@ export const shareFile = () => debugLogger.shareFile();
 export const copyToClipboard = () => debugLogger.copyToClipboard();
 export const time = () => debugLogger.time();
 export const duration = (startTime: number) => debugLogger.duration(startTime);
+
+// Debug logging for credits operations
+const CREDITS_DEBUG = process.env.EXPO_PUBLIC_CREDITS_DEBUG === 'true' || __DEV__;
+
+export const logCreditsDebug = (message: string, data?: any) => {
+  if (CREDITS_DEBUG) {
+    console.log(`[Credits Debug] ${message}`, data ? data : '');
+  }
+};
+
+export const logCreditsError = (message: string, error?: any) => {
+  if (CREDITS_DEBUG) {
+    console.error(`[Credits Error] ${message}`, error ? error : '');
+  }
+};
+
+export const logCreditsOperation = (operation: string, data?: any) => {
+  if (CREDITS_DEBUG) {
+    console.log(`[Credits Operation] ${operation}`, data ? data : '');
+  }
+};

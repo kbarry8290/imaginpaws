@@ -15,7 +15,7 @@ export default function ResultsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const { user } = useAuth();
-  const { credits } = useCredits();
+  const { pictureCredits } = useCredits();
   const params = useLocalSearchParams();
   const originalPhoto = params.originalPhoto as string | undefined;
   const resultPhoto = params.resultPhoto as string | undefined;

@@ -112,7 +112,7 @@ export function CreditsProvider({ children }: { children: React.ReactNode }) {
     
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('TIMEOUT')), 10000); // 10 second timeout
+      setTimeout(() => reject(new Error('TIMEOUT')), 5000); // 5 second timeout
     });
     
     try {

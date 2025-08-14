@@ -53,19 +53,36 @@ export async function getCredits(): Promise<UserCredits | null> {
   logCreditsOperation('Starting getCredits');
   
   try {
+    // Get current user session to ensure authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      logCreditsError('getCredits session error', sessionError);
+      throw new Error('RLS_FORBIDDEN');
+    }
+    
+    if (!session) {
+      logCreditsError('getCredits no session found');
+      throw new Error('RLS_FORBIDDEN');
+    }
+    
+    logCreditsDebug('getCredits user authenticated', { userId: session.user.id });
+    
+    // Use maybeSingle() instead of single() to handle no rows case
     const { data, error } = await supabase
       .from('user_credits')
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No rows returned - user doesn't have a credits row yet
-        logCreditsDebug('No credits row found for user');
-        return null;
-      }
       logCreditsError('getCredits database error', error);
       throw error;
+    }
+
+    if (!data) {
+      // No rows returned - user doesn't have a credits row yet
+      logCreditsDebug('No credits row found for user');
+      return null;
     }
 
     logCreditsOperation('Finished getCredits', data);
@@ -84,10 +101,33 @@ export async function ensureCreditsRow(): Promise<UserCredits> {
   logCreditsOperation('Starting ensureCreditsRow');
   
   try {
-    // Upsert with minimal fields only - do not send user_id
+    // Get current user session to ensure authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      logCreditsError('ensureCreditsRow session error', sessionError);
+      throw new Error('RLS_FORBIDDEN');
+    }
+    
+    if (!session) {
+      logCreditsError('ensureCreditsRow no session found');
+      throw new Error('RLS_FORBIDDEN');
+    }
+    
+    logCreditsDebug('ensureCreditsRow user authenticated', { userId: session.user.id });
+    
+    // First try to get existing row
+    const existingCredits = await getCredits();
+    if (existingCredits) {
+      logCreditsOperation('Finished ensureCreditsRow (existing row)', existingCredits);
+      return existingCredits;
+    }
+    
+    // If no existing row, create one with user_id for RLS compliance
     const { data, error } = await supabase
       .from('user_credits')
-      .upsert({
+      .insert({
+        user_id: session.user.id,
         picture_credits: 0,
         bonus_credits: 0,
         daily_scans_used: 0,
@@ -96,23 +136,6 @@ export async function ensureCreditsRow(): Promise<UserCredits> {
       .single();
 
     if (error) {
-      // Swallow 409/duplicate errors and proceed
-      if (error.code === '23505') {
-        // Unique constraint violation - row already exists, fetch it
-        logCreditsDebug('Row already exists, fetching existing data');
-        const { data: existingData, error: fetchError } = await supabase
-          .from('user_credits')
-          .select('*')
-          .single();
-        
-        if (fetchError) {
-          logCreditsError('Error fetching existing credits row', fetchError);
-          throw fetchError;
-        }
-        
-        logCreditsOperation('Finished ensureCreditsRow (existing row)', existingData);
-        return existingData;
-      }
       logCreditsError('ensureCreditsRow database error', error);
       throw error;
     }
@@ -132,6 +155,21 @@ export async function incrementCredits({ productId, amount }: IncrementCreditsPa
   logCreditsOperation('Starting incrementCredits', { productId, amount });
   
   try {
+    // Get current user session to ensure authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      logCreditsError('incrementCredits session error', sessionError);
+      throw new Error('RLS_FORBIDDEN');
+    }
+    
+    if (!session) {
+      logCreditsError('incrementCredits no session found');
+      throw new Error('RLS_FORBIDDEN');
+    }
+    
+    logCreditsDebug('incrementCredits user authenticated', { userId: session.user.id });
+    
     // First, ensure we have a row
     let credits = await getCredits();
     if (!credits) {
@@ -213,6 +251,21 @@ export async function spendOneCredit(): Promise<UserCredits> {
   logCreditsOperation('Starting spendOneCredit');
   
   try {
+    // Get current user session to ensure authentication
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      logCreditsError('spendOneCredit session error', sessionError);
+      throw new Error('RLS_FORBIDDEN');
+    }
+    
+    if (!session) {
+      logCreditsError('spendOneCredit no session found');
+      throw new Error('RLS_FORBIDDEN');
+    }
+    
+    logCreditsDebug('spendOneCredit user authenticated', { userId: session.user.id });
+    
     // First, ensure we have a row
     let credits = await getCredits();
     if (!credits) {
